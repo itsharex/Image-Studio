@@ -173,3 +173,32 @@
 .api-mode-btn.active .api-mode-title { color: var(--accent); }
 .api-mode-sub { font-size: 10px; color: var(--text-muted); }
 .api-mode-btn.active .api-mode-sub { color: var(--accent); opacity: 0.85; }
+
+/* UpstreamConfigModal layout. Same row primitive as .settings-row but with
+ * a tighter rhythm — the modal is denser than the inline settings page. */
+.upstream-form { display: flex; flex-direction: column; gap: 14px; }
+.upstream-row { display: flex; flex-direction: column; gap: 6px; }
+.upstream-row .head { font-size: 12px; }
+.upstream-row .req { color: var(--error-text); font-weight: 600; margin-left: 2px; }
+.key-input-wrap { position: relative; display: flex; }
+.key-input-wrap .input { flex: 1; padding-right: 36px; }
+.key-toggle-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  color: var(--text-muted);
+}
+.key-toggle-btn:hover { color: var(--accent); }
+.upstream-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.upstream-actions .btn { min-width: 96px; }

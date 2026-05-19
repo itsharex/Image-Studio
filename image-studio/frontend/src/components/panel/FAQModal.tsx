@@ -8,33 +8,36 @@ export function FAQModal({ open, onClose }: { open: boolean; onClose: () => void
         <details open>
           <summary>Responses API 与 Images API 怎么选?</summary>
           <p>
-            本应用支持两种上游接口形态,在「设置 → API 形态」切换:
+            本应用支持两种上游接口形态,在「🔧 上游配置」里切换:
           </p>
           <ul>
             <li>
-              <strong>Responses API</strong>(默认,推荐):POST <code>/v1/responses</code>,通过模型内置的
+              <strong>Responses API · CF 超时推荐</strong>:POST <code>/v1/responses</code>,通过模型内置的
               <code> image_generation </code> 工具触发生图,SSE 流式接收。
-              <strong>能防 Cloudflare 524/504 超时</strong>(图像推理常常超过 100 秒),
-              但要求上游 key 绑定到「拥有 gpt-5.5(或同等具备 image_generation 工具的)模型的分组」。
+              <strong>能防 Cloudflare 524/504 超时</strong>(图像推理常常超过 100 秒)。
+              <br />
+              <strong>Key 要绑「拥有 gpt-5.5 模型的分组」</strong>(中转站后台通常叫「余额分组」或「套餐分组」),
+              不要选 image-2 分组。
             </li>
             <li>
-              <strong>Images API</strong>:标准 OpenAI <code>/v1/images/generations</code>(文生图)+
-              <code>/v1/images/edits</code>(图生图,multipart 上传)。一次性 JSON 响应,无 SSE 保活。
-              <strong>兼容性最广</strong> —— 几乎所有 OpenAI 兼容中转站都开了这两个端点。但长推理(尤其图生图)
-              上 CF 524 风险更高。
+              <strong>Images API · 兼容广</strong>:标准 OpenAI <code>/v1/images/generations</code>(文生图)+
+              <code>/v1/images/edits</code>(图生图,multipart 上传)。一次性 JSON 响应,无 SSE 保活,
+              长推理上 CF 超时风险更高。几乎所有 OpenAI 兼容中转站都开了这两个端点。
+              <br />
+              <strong>Key 可使用标准的 image-2 / image API 分组</strong>,不需要 gpt-5.5 权限。
             </li>
           </ul>
           <p>
-            <strong>选哪个?</strong>看你的中转站 key 绑定的是「文本/Responses 分组」还是「Images 分组」。
-            如果两个都开了,优先 Responses(更稳)。Images 模式不需要 gpt-5.5,只需要图像模型权限(如 gpt-image-1 / image-2)。
+            <strong>选哪个?</strong>看你 key 绑的是哪个分组。
+            两边都有的话优先 Responses(SSE 更抗 524)。
           </p>
         </details>
 
         <details>
           <summary>支持哪些上游中转站?</summary>
           <p>
-            <strong>不内置任何默认上游</strong>,首次使用需到「设置 → 上游 BASE_URL」中填入你自己的地址,
-            并选择对应的 API 形态(见上一条 FAQ)。
+            <strong>不内置任何默认上游</strong>,首次启动会自动弹出「上游配置」窗口,
+            填入你自己的 BASE_URL + API Key + 选择 API 形态(见上一条 FAQ)。
           </p>
           <p>
             <strong>Responses API 模式</strong>下:任何兼容 OpenAI Responses API 形态 + 提供
@@ -52,11 +55,22 @@ export function FAQModal({ open, onClose }: { open: boolean; onClose: () => void
         <details>
           <summary>能换其他文本 / 图像模型吗?</summary>
           <p>
-            可以。在「设置」展开「文本模型 ID」和「图像模型 ID」填上即可。
+            可以。在「🔧 上游配置」里填即可,不同 API 形态用到的字段不一样:
           </p>
           <ul>
-            <li><strong>文本模型 ID</strong>:默认 <code>gpt-5.5</code>(用于推理 + 调用 image 工具)</li>
-            <li><strong>图像模型 ID</strong>:默认 <code>gpt-image-2</code>(实际生成图片的工具)</li>
+            <li>
+              <strong>Responses API</strong> 用<strong>两个</strong>模型 ID:
+              <ul>
+                <li><strong>文本模型 ID</strong>(默认 <code>gpt-5.5</code>):承担推理 + 调用 image_generation 工具</li>
+                <li><strong>图像模型 ID</strong>(默认 <code>gpt-image-2</code>):工具实际用哪个图像模型出图</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Images API</strong> 只用<strong>一个</strong>模型 ID:
+              <ul>
+                <li><strong>图像模型 ID</strong>(默认 <code>gpt-image-2</code>):直接传给 <code>/v1/images/generations</code> 的 <code>model</code> 字段。文本模型 ID 在此模式下不读。</li>
+              </ul>
+            </li>
           </ul>
         </details>
 

@@ -172,6 +172,10 @@ interface StudioState {
   setFontScale: (v: number) => void;
   testAPIKey: () => Promise<void>;
   isTestingKey: boolean;
+  // 上游配置弹窗状态。bootstrap 在 apiKey/baseURL 任一为空时自动置 true。
+  upstreamModalOpen: boolean;
+  openUpstreamConfig: () => void;
+  closeUpstreamConfig: () => void;
   newWorkspace: (name?: string) => void;
   switchWorkspace: (id: string) => void;
   closeWorkspace: (id: string) => void;
@@ -314,6 +318,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   theme: "dark",
   fontScale: 1,
   isTestingKey: false,
+  upstreamModalOpen: false,
+  openUpstreamConfig: () => set({ upstreamModalOpen: true }),
+  closeUpstreamConfig: () => set({ upstreamModalOpen: false }),
   workspaces: [],
   activeWorkspaceId: "",
   styleTag: "",
@@ -601,6 +608,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       apiMode, baseURL, textModelID, imageModelID, transport,
       workspaces: [initialWorkspace],
       activeWorkspaceId: wsId,
+      // 首次启动:apiKey 或 baseURL 任一缺失 → 自动弹上游配置。
+      upstreamModalOpen: !key.trim() || !baseURL.trim(),
     });
   },
 

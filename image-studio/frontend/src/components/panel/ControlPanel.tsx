@@ -36,12 +36,12 @@ export function ControlPanel() {
     apiKey, mode, prompt, negativePrompt, size, quality, seed, batchCount, styleTag,
     sources, currentImage,
     errorMessage, isRunning, lastPayload, isTestingKey,
-    setAPIKey, setField,
+    apiMode, baseURL, openUpstreamConfig,
+    setField,
     selectSourceImage, removeSource, clearSources,
     submit, cancel, retryLast, testAPIKey, pushToast,
   } = useStudioStore();
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [keyOpen, setKeyOpen] = useState(!apiKey);
   const [promptPopover, setPromptPopover] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
 
@@ -246,15 +246,14 @@ export function ControlPanel() {
 
       <section>
         <div className="head-row">
-          <button
-            className="settings-toggle"
-            onClick={() => setKeyOpen((v) => !v)}
-            type="button"
-            style={{ flex: 1 }}
-          >
-            <span>API Key {apiKey && <span style={{ color: "var(--success)", fontSize: 10, marginLeft: 4 }}>● 已配置</span>}</span>
-            <span style={{ opacity: 0.5 }}>{keyOpen ? "▾" : "▸"}</span>
-          </button>
+          <label className="head" style={{ flex: 1 }}>
+            上游
+            {apiKey && baseURL ? (
+              <span style={{ color: "var(--success)", fontSize: 10, marginLeft: 6 }}>● 已配置</span>
+            ) : (
+              <span style={{ color: "var(--error-text)", fontSize: 10, marginLeft: 6 }}>● 未配置</span>
+            )}
+          </label>
           <button
             className="head-link"
             onClick={() => setFaqOpen(true)}
@@ -264,32 +263,31 @@ export function ControlPanel() {
             ❓ FAQ
           </button>
         </div>
-        {keyOpen && (
-          <>
-            <input
-              className="input"
-              type="password"
-              placeholder="sk-..."
-              value={apiKey}
-              onChange={(e) => setAPIKey(e.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              style={{ marginTop: 6 }}
-            />
-            <div className="key-hint">
-              💡 选拥有 <strong>gpt-5.5</strong> 模型的分组(余额/套餐),不要 image-2 分组。
-              <span onClick={() => setFaqOpen(true)} style={{ color: "var(--accent)", cursor: "pointer", marginLeft: 4 }}>详见 FAQ ›</span>
-            </div>
-            <button
-              className="btn secondary"
-              style={{ marginTop: 4, fontSize: 11, padding: "6px 10px" }}
-              onClick={testAPIKey}
-              disabled={!apiKey.trim() || isTestingKey}
-            >
-              {isTestingKey ? "测试中..." : "🔌 测试连接"}
-            </button>
-          </>
-        )}
+        <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+          <button
+            className="btn secondary"
+            style={{ flex: 1, fontSize: 11, padding: "8px 10px" }}
+            onClick={openUpstreamConfig}
+            type="button"
+          >
+            🔧 上游配置
+          </button>
+          <button
+            className="btn secondary"
+            style={{ fontSize: 11, padding: "8px 10px" }}
+            onClick={testAPIKey}
+            disabled={!apiKey.trim() || !baseURL.trim() || isTestingKey}
+            type="button"
+            title="发送一个最小请求验证 BASE_URL + API Key + 分组权限"
+          >
+            {isTestingKey ? "测试中..." : "🔌 测试"}
+          </button>
+        </div>
+        <div className="key-hint" style={{ marginTop: 6 }}>
+          {apiMode === "responses"
+            ? "Responses API · key 需绑「拥有 gpt-5.5 模型的分组」(可防 CF 524)"
+            : "Images API · 可使用标准 image-2 / image API 分组"}
+        </div>
       </section>
 
       <FAQModal open={faqOpen} onClose={() => setFaqOpen(false)} />
@@ -306,9 +304,9 @@ export function ControlPanel() {
             {mode === "edit" ? "编辑" : "生成"} {batchCount} 张
           </button>
         )}
-        {!apiKey && (
+        {(!apiKey || !baseURL) && (
           <div className="generate-sub">
-            首次使用请在下方「API Key」区填入 sk- 开头的密钥
+            首次使用请点击「🔧 上游配置」填入 BASE_URL 和 API Key
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { SourceStrip } from "./components/canvas/SourceStrip";
 import { StatusBar } from "./components/canvas/StatusBar";
 import { HistoryRail } from "./components/history/HistoryRail";
 import { ToastContainer } from "./components/common/ToastContainer";
+import { UpstreamConfigModal } from "./components/panel/UpstreamConfigModal";
 import { useStudioStore } from "./state/studioStore";
 
 function App() {
@@ -132,8 +133,18 @@ function App() {
         )}
       </div>
       <FooterBar />
+      <UpstreamConfigGate />
     </div>
   );
+}
+
+// Render the upstream-config modal driven by store state.
+// Split out so the read of `upstreamModalOpen` only re-renders this subtree,
+// not the whole App.
+function UpstreamConfigGate() {
+  const open = useStudioStore((s) => s.upstreamModalOpen);
+  const close = useStudioStore((s) => s.closeUpstreamConfig);
+  return <UpstreamConfigModal open={open} onClose={close} />;
 }
 
 export default App;

@@ -64,7 +64,13 @@
 
 ### 方式 1:下载预编译版本(推荐)
 
-去 [Releases](https://github.com/RoseKhlifa/Image-Studio/releases) 下载 `image-studio.exe`(Windows 单文件,约 12MB),双击即可运行。Windows 10+ 需要预装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)(大部分新机器已预装)。
+到 [Releases](https://github.com/RoseKhlifa/Image-Studio/releases) 页面下载对应平台的安装包:
+
+| 平台 | 文件 | 备注 |
+|---|---|---|
+| Windows | `image-studio-windows-amd64.exe` | Win10+ 需要 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)(大部分新机器已预装) |
+| Linux | `image-studio-linux-amd64` | 需要 `libwebkit2gtk-4.1-0` 和 `libgtk-3-0`,Ubuntu 22.04+ 默认有;先 `chmod +x` 再双击 |
+| macOS | `image-studio-macos.zip` | Universal 二进制,Intel + Apple Silicon 通用。解压后拖到「应用程序」即可。首次打开需在系统设置 → 隐私 中允许 |
 
 ### 方式 2:从源码构建
 

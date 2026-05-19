@@ -1,0 +1,110 @@
+name: Release
+
+# Cross-platform release builds. Wails v2 doesn't support cross-compilation,
+# so each target runs on its own native runner.
+#
+# Trigger by pushing a `v*` tag (e.g. `git tag v0.1.0 && git push --tags`),
+# or run manually via the "Run workflow" button on Actions tab.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to upload artifacts to a release
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-amd64
+            os: windows-latest
+            platform: windows/amd64
+            artifact_glob: 'image-studio/build/bin/image-studio.exe'
+            asset_name: image-studio-windows-amd64.exe
+          - name: linux-amd64
+            os: ubuntu-22.04
+            platform: linux/amd64
+            artifact_glob: 'image-studio/build/bin/image-studio'
+            asset_name: image-studio-linux-amd64
+          - name: macos-universal
+            os: macos-latest
+            platform: darwin/universal
+            artifact_glob: 'image-studio/build/bin/image-studio.app'
+            asset_name: image-studio-macos.zip
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          check-latest: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        shell: bash
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      # Linux needs the webview / GTK headers. Ubuntu 22.04 ships webkit2gtk 4.1,
+      # which Wails v2.12+ supports.
+      - name: Install Linux deps
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            pkg-config
+
+      - name: Build (${{ matrix.platform }})
+        working-directory: image-studio
+        shell: bash
+        run: wails build -platform ${{ matrix.platform }} -clean
+
+      # macOS produces a .app bundle (directory) — zip it for distribution.
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        working-directory: image-studio/build/bin
+        run: zip -r image-studio-macos.zip image-studio.app
+
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            cp image-studio/build/bin/image-studio-macos.zip dist/${{ matrix.asset_name }}
+          else
+            cp ${{ matrix.artifact_glob }} dist/${{ matrix.asset_name }}
+          fi
+          ls -la dist/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: dist/${{ matrix.asset_name }}
+          retention-days: 14
+
+      - name: Attach to release (only on tag push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.asset_name }}
+          fail_on_unmatched_files: true
+          # Keep release notes editable — don't autogenerate.
+          generate_release_notes: false

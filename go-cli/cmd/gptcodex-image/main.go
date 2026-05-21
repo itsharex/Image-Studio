@@ -152,7 +152,7 @@ func run() error {
 		return err
 	}
 
-	imageName := fsio.BuildImageName(resolvedMode, *prompt, timestamp)
+	imageName := fsio.BuildImageName(resolvedMode, *prompt, timestamp, opts.OutputFormat)
 	imagePath, err := fsio.SaveImage(result.ImageB64, filepath.Join(output, imageName))
 	if err != nil {
 		return err

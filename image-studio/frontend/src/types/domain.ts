@@ -3,14 +3,18 @@
 
 export type Mode = "generate" | "edit";
 
-export type SizeValue = "1024x1024" | "1536x1024" | "1024x1536" | "2048x1152" | "1152x2048";
+export type SizeValue = "auto" | "1024x1024" | "1536x1024" | "1024x1536" | "2048x1152" | "1152x2048";
 export type QualityValue = "auto" | "high" | "medium" | "low";
 export type TransportKind = "auto" | "native" | "curl";
+// 让上游做编码;落盘扩展名 jpeg → .jpg,其他原样。
+export type OutputFormatValue = "png" | "jpeg" | "webp";
 
 export interface SizeOption { value: SizeValue; label: string; }
 export interface QualityOption { value: QualityValue; label: string; }
+export interface OutputFormatOption { value: OutputFormatValue; label: string; }
 
 export const SIZE_OPTIONS: SizeOption[] = [
+  { value: "auto",      label: "自适应 auto" },
   { value: "1024x1024", label: "正方形 1024×1024" },
   { value: "1536x1024", label: "横版 1536×1024" },
   { value: "1024x1536", label: "竖版 1024×1536" },
@@ -19,10 +23,16 @@ export const SIZE_OPTIONS: SizeOption[] = [
 ];
 
 export const QUALITY_OPTIONS: QualityOption[] = [
-  { value: "auto", label: "标准 auto(推荐)" },
-  { value: "high", label: "高质量 high" },
+  { value: "auto",   label: "自适应 auto" },
+  { value: "high",   label: "高质量 high" },
   { value: "medium", label: "中等 medium" },
-  { value: "low", label: "快速草稿 low" },
+  { value: "low",    label: "快速草稿 low" },
+];
+
+export const OUTPUT_FORMAT_OPTIONS: OutputFormatOption[] = [
+  { value: "png",  label: "PNG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "webp", label: "WebP" },
 ];
 
 export interface SourceImage {
@@ -44,6 +54,7 @@ export interface HistoryItem {
   mode: Mode;
   size: SizeValue;
   quality: QualityValue;
+  outputFormat?: OutputFormatValue;
   parentId?: string;       // id of the source image (when mode === "edit")
   createdAt: number;       // unix ms
 
@@ -74,6 +85,7 @@ export interface Workspace {
   mode: Mode;
   size: SizeValue;
   quality: QualityValue;
+  outputFormat: OutputFormatValue;
   seed: number;
   batchCount: number;
   sources: SourceImage[];
@@ -87,6 +99,7 @@ export interface Preset {
   name: string;
   size: SizeValue;
   quality: QualityValue;
+  outputFormat?: OutputFormatValue;
   negativePrompt: string;
   transport: TransportKind;
   batchCount: number;

@@ -4,7 +4,7 @@ import {
   Settings, Trash2, X,
 } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { SizeValue, QualityValue, Mode } from "../../types/domain";
+import { SizeValue, QualityValue, Mode, OutputFormatValue, OUTPUT_FORMAT_OPTIONS } from "../../types/domain";
 import { SettingsPanel } from "./SettingsPanel";
 import { PromptPopover } from "./PromptPopover";
 import { FAQModal } from "./FAQModal";
@@ -17,7 +17,9 @@ const STYLE_CHIPS: { id: string; label: string }[] = [
   { id: "chinese",   label: "国风" },
 ];
 
-const ASPECT_OPTIONS: { value: SizeValue; label: string; w: number; h: number }[] = [
+// auto 项不展示具体方框形状(让上游决定),用一个虚线方框作为视觉占位。
+const ASPECT_OPTIONS: { value: SizeValue; label: string; w: number; h: number; auto?: boolean }[] = [
+  { value: "auto",      label: "Auto", w: 18, h: 18, auto: true },
   { value: "1024x1024", label: "1:1",  w: 18, h: 18 },
   { value: "1024x1536", label: "2:3",  w: 14, h: 20 },
   { value: "1152x2048", label: "9:16", w: 12, h: 22 },
@@ -26,6 +28,7 @@ const ASPECT_OPTIONS: { value: SizeValue; label: string; w: number; h: number }[
 ];
 
 const QUALITY_TIERS: { value: QualityValue; label: string }[] = [
+  { value: "auto",   label: "Auto" },
   { value: "low",    label: "1K" },
   { value: "medium", label: "2K" },
   { value: "high",   label: "4K" },
@@ -34,6 +37,7 @@ const QUALITY_TIERS: { value: QualityValue; label: string }[] = [
 export function ControlPanel() {
   const {
     apiKey, mode, prompt, negativePrompt, size, quality, seed, styleTag,
+    outputFormat,
     sources, currentImage,
     errorMessage, isRunning, lastPayload, isTestingKey,
     apiMode, baseURL, responsesConfig, imagesConfig, openUpstreamConfig,
@@ -47,7 +51,6 @@ export function ControlPanel() {
   const [faqOpen, setFaqOpen] = useState(false);
 
   const promptLen = prompt.length;
-  const activeAspect = ASPECT_OPTIONS.find((a) => a.value === size)?.label ?? "1:1";
 
   return (
     <div className="w-[320px] shrink-0 overflow-y-auto flex flex-col gap-4 p-4 bg-white/85 dark:bg-zinc-900/40 border-r border-black/[0.08] dark:border-white/[0.06]">
@@ -175,13 +178,14 @@ export function ControlPanel() {
 
       {/* 比例 */}
       <Section label="比例">
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-6 gap-1.5">
           {ASPECT_OPTIONS.map((a) => {
-            const active = activeAspect === a.label;
+            const active = size === a.value;
             return (
               <button
-                key={a.label}
-                onClick={() => setField("size", a.value as SizeValue)}
+                key={a.value}
+                onClick={() => setField("size", a.value)}
+                title={a.auto ? "让上游决定尺寸 / 比例" : a.value}
                 className={`flex flex-col items-center gap-1 py-2 rounded-md ring-1 transition-colors ${
                   active
                     ? "bg-emerald-500/12 ring-emerald-500/40"
@@ -189,7 +193,7 @@ export function ControlPanel() {
                 }`}
               >
                 <span
-                  className={`block rounded-sm border-2 ${
+                  className={`block rounded-sm border-2 ${a.auto ? "border-dashed" : ""} ${
                     active ? "border-emerald-400" : "border-zinc-400 dark:border-zinc-600"
                   }`}
                   style={{ width: a.w, height: a.h }}
@@ -273,6 +277,21 @@ export function ControlPanel() {
               onChange={(e) => setField("negativePrompt", e.target.value)}
               className="w-full min-h-[50px] resize-y bg-white dark:bg-zinc-950 ring-1 ring-black/[0.08] dark:ring-white/[0.06] rounded-lg px-3 py-2 text-xs text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-ring"
             />
+            <div>
+              <label className="block text-[10px] uppercase tracking-wide text-zinc-500 mb-1">输出格式</label>
+              <Seg>
+                {OUTPUT_FORMAT_OPTIONS.map((f) => (
+                  <SegItem
+                    key={f.value}
+                    active={outputFormat === f.value}
+                    onClick={() => setField("outputFormat", f.value as OutputFormatValue)}
+                  >
+                    {f.label}
+                  </SegItem>
+                ))}
+              </Seg>
+              <p className="text-[10px] text-zinc-500 mt-1">JPEG/WebP 体积更小;落盘扩展名 jpeg→.jpg</p>
+            </div>
             <div className="flex gap-1.5">
               <input
                 type="number"

@@ -19,6 +19,7 @@ import type { backend } from "../../wailsjs/go/models";
 import {
   HistoryItem,
   Mode,
+  OutputFormatValue,
   Preset,
   ProgressInfo,
   QualityValue,
@@ -77,6 +78,8 @@ interface StudioState {
   negativePrompt: string;
   size: SizeValue;
   quality: QualityValue;
+  // 输出图像编码:png / jpeg / webp。落盘扩展名 jpeg → .jpg(后端 client.FileExtForFormat)。
+  outputFormat: OutputFormatValue;
   seed: number;          // 0 = random
   transport: TransportKind;
 
@@ -145,6 +148,9 @@ interface StudioState {
 
   // Reported by CanvasStage; consumed by StatusBar. 1.0 = 100%.
   viewZoom: number;
+  // 单调递增计数器。旋转 / 翻转 / 裁剪在 currentImage id 不变的前提下递增此值,
+  // CanvasStage 用它当依赖来重置 userView(新尺寸下旧 pan/zoom 已经无意义)。
+  canvasViewResetTick: number;
   // Toggled by F11; canvas-shell expands to full window and side panels hide.
   fullscreen: boolean;
   // List of recently used prompts (most recent first, capped).
@@ -318,6 +324,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   negativePrompt: "",
   size: "1024x1024",
   quality: "medium",
+  outputFormat: "png",
   seed: 0,
   transport: "auto",
   baseURL: "",
@@ -359,6 +366,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   toasts: [],
   recentDurations: [],
   viewZoom: 1,
+  canvasViewResetTick: 0,
   fullscreen: false,
   promptHistory: [],
   batchCount: 1,
@@ -405,6 +413,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       try { localStorage.setItem("gptcodex.transport", String(value)); } catch {}
     } else if (key === "noPromptRevision") {
       try { localStorage.setItem("gptcodex.noPromptRevision", value ? "1" : "0"); } catch {}
+    } else if (key === "outputFormat") {
+      try { localStorage.setItem("gptcodex.outputFormat", String(value)); } catch {}
     }
   },
 
@@ -503,6 +513,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       prompt: augmentedPrompt,
       size: s.size,
       quality: s.quality,
+      outputFormat: s.outputFormat,
       imagePaths: editSourcePaths,
       imagePath: "",
       maskB64: maskB64,
@@ -530,6 +541,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     void launchOneJob(s.mode, p, {
       size: s.size,
       quality: s.quality,
+      outputFormat: s.outputFormat,
       sources: s.sources,
       currentImage: s.currentImage,
       styleTag: s.styleTag,
@@ -566,6 +578,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (item.negativePrompt !== undefined) patch.negativePrompt = item.negativePrompt;
     if (item.styleTag !== undefined) patch.styleTag = item.styleTag;
     if (item.transport) patch.transport = item.transport;
+    if (item.outputFormat) patch.outputFormat = item.outputFormat;
     set(patch as any);
     get().pushToast("已应用此图的参数到控制台", "success");
   },
@@ -653,6 +666,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       noPromptRevision = localStorage.getItem("gptcodex.noPromptRevision") === "1";
     } catch {}
+    let outputFormat: OutputFormatValue = "png";
+    try {
+      const v = localStorage.getItem("gptcodex.outputFormat");
+      if (v === "png" || v === "jpeg" || v === "webp") outputFormat = v;
+    } catch {}
     // 每个形态的独立上游槽
     let responsesConfig = loadModeConfig("responses");
     let imagesConfig = loadModeConfig("images");
@@ -703,6 +721,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mode: "generate",
       size: "1024x1024",
       quality: "medium",
+      outputFormat,
       seed: 0,
       batchCount: 1,
       sources: [],
@@ -711,6 +730,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({
       apiKey: activeKey, history: items, promptHistory, presets, theme, fontScale,
       apiMode, baseURL, textModelID, imageModelID, transport, noPromptRevision,
+      outputFormat,
       responsesConfig, imagesConfig,
       workspaces: [initialWorkspace],
       activeWorkspaceId: wsId,
@@ -899,6 +919,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       name: trimmed,
       size: s.size,
       quality: s.quality,
+      outputFormat: s.outputFormat,
       negativePrompt: s.negativePrompt,
       transport: s.transport,
       batchCount: s.batchCount,
@@ -915,6 +936,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({
       size: p.size,
       quality: p.quality,
+      outputFormat: p.outputFormat ?? get().outputFormat,
       negativePrompt: p.negativePrompt,
       transport: p.transport,
       batchCount: p.batchCount,
@@ -982,6 +1004,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         prompt: "a red dot",
         size: "1024x1024",
         quality: "low",
+        outputFormat: "png",
         imagePaths: [],
         imagePath: "",
         maskB64: "",
@@ -1018,6 +1041,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mode: "generate",
       size: "1024x1024",
       quality: "medium",
+      outputFormat: s.outputFormat,
       seed: 0,
       batchCount: 1,
       sources: [],
@@ -1032,6 +1056,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mode: newW.mode,
       size: newW.size,
       quality: newW.quality,
+      outputFormat: newW.outputFormat,
       seed: newW.seed,
       batchCount: newW.batchCount,
       sources: newW.sources,
@@ -1059,6 +1084,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mode: target.mode,
       size: target.size,
       quality: target.quality,
+      outputFormat: target.outputFormat ?? get().outputFormat,
       seed: target.seed,
       batchCount: target.batchCount,
       sources: target.sources,
@@ -1090,6 +1116,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         mode: next.mode,
         size: next.size,
         quality: next.quality,
+        outputFormat: next.outputFormat ?? get().outputFormat,
         seed: next.seed,
         batchCount: next.batchCount,
         sources: next.sources,
@@ -1186,35 +1213,49 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 }));
 
 // Toast actions inserted at end of store factory below via patch.
-// Load a freshly-written transformed image (path under imports/) into the store
-// as a new currentImage + history item, replacing source[0] so the user can
-// immediately edit it again.
+// 把一次旋转 / 翻转 / 裁剪的产物挂到 currentImage 上 —— 是「就地编辑」语义,
+// 不是新的生成事件,因此:
+//   1) 不创建新的 HistoryItem,不 persistHistoryItem,不 prepend 进 history 列表
+//      → 历史栏只保留真正"花了 token 的生成",连续旋转十次也不会刷十条历史
+//   2) 把当前 HistoryItem 的 imageB64 / savedPath 换成新文件的;id / prompt /
+//      参数都保留(原始那一条史 history[] 里的引用是不同对象,不受影响 ——
+//      画布显示旋转版,历史栏依然显示原图)
+//   3) 旋转 / 翻转后清空 mask + 标注,因为它们的坐标系是基于旧图的
+//   4) 触发 canvasViewResetTick 让 CanvasStage 重新 fit,因为旋转 90 度时
+//      W↔H 互换,残留 userView 会让图飞到边外
 async function loadTransformedAsCurrent(path: string) {
   const store = useStudioStore.getState();
   try {
     const b64 = await ReadImageAsBase64(path);
     const baseName = path.split(/[\\/]/).pop() ?? "transformed.png";
-    const item: HistoryItem = {
-      id: cryptoIDFallback(),
-      imageB64: b64,
-      prompt: `(变换)${baseName}`,
-      mode: "edit",
-      size: store.size,
-      quality: store.quality,
-      createdAt: Date.now(),
-      savedPath: path,
-    };
-    await persistHistoryItem(item);
+    const cur = store.currentImage;
+    const updated: HistoryItem = cur
+      ? { ...cur, imageB64: b64, savedPath: path }
+      : {
+          id: cryptoIDFallback(),
+          imageB64: b64,
+          prompt: `(变换)${baseName}`,
+          mode: "edit",
+          size: store.size,
+          quality: store.quality,
+          createdAt: Date.now(),
+          savedPath: path,
+        };
     // Replace the first source with the new transformed file so the next
     // edit call uses it; keep the rest of sources intact.
     const nextSources = store.sources.length > 0
       ? [{ path, name: baseName, size: 0, imageB64: b64 }, ...store.sources.slice(1)]
       : [{ path, name: baseName, size: 0, imageB64: b64 }];
     useStudioStore.setState({
-      currentImage: item,
-      history: [item, ...useStudioStore.getState().history],
+      currentImage: updated,
       sources: nextSources,
       mode: "edit",
+      // 旋转/翻转/裁剪改变了图像坐标系,必须清掉残留的画笔与标注。
+      maskDataURL: null,
+      strokes: [],
+      annotations: [],
+      // 让 CanvasStage 的视图 / 蒙版重置 effect 重新触发(它依赖此 tick)。
+      canvasViewResetTick: useStudioStore.getState().canvasViewResetTick + 1,
     });
   } catch (e: any) {
     useStudioStore.getState().pushToast(`加载变换结果失败:${e?.message ?? e}`, "error");
@@ -1238,6 +1279,7 @@ async function launchOneJob(
   snapshot: {
     size: SizeValue;
     quality: QualityValue;
+    outputFormat: OutputFormatValue;
     sources: SourceImage[];
     currentImage: HistoryItem | null;
     styleTag: string;
@@ -1291,6 +1333,7 @@ async function launchOneJob(
           mode: r.mode as Mode,
           size: snapshot.size,
           quality: snapshot.quality,
+          outputFormat: snapshot.outputFormat,
           parentId: mode === "edit" ? (snapshot.sources[0]?.path || snapshot.currentImage?.savedPath) : undefined,
           createdAt: Date.now(),
           seed: payload.seed || undefined,
@@ -1369,6 +1412,7 @@ function saveActiveWorkspaceSnapshot(s: StudioState): Workspace[] {
       mode: s.mode,
       size: s.size,
       quality: s.quality,
+      outputFormat: s.outputFormat,
       seed: s.seed,
       batchCount: s.batchCount,
       sources: s.sources,

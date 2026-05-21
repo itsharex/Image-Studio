@@ -4,15 +4,16 @@ import { OpenExternalURL, OpenOutputDir } from "../../../wailsjs/go/backend/Serv
 
 const REPO_URL = "https://github.com/RoseKhlifa/Image-Studio";
 const ISSUES_URL = "https://github.com/RoseKhlifa/Image-Studio/issues";
-const VERSION = "0.1.2";
+const VERSION = "0.1.3";
 
 export function FooterBar() {
   const { fullscreen, history, runningJobs, isRunning, pushToast } = useStudioStore();
   if (fullscreen) return null;
 
-  const monthCount = history.filter(
-    (h) => Date.now() - h.createdAt < 30 * 24 * 3600 * 1000,
-  ).length;
+  // 今日已生图 = 本地日历当天 00:00 起的条目数,不是「最近 24h」滚动窗口。
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCount = history.filter((h) => h.createdAt >= todayStart.getTime()).length;
 
   function open(url: string) {
     OpenExternalURL(url).catch(() => pushToast("无法打开浏览器", "error"));
@@ -33,12 +34,12 @@ export function FooterBar() {
       </div>
       <div className="flex items-center gap-3">
         <span className="flex items-baseline gap-1">
-          <span className="opacity-70">本月</span>
-          <span className="font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">{monthCount}</span>
+          <span className="opacity-70">今日已生图:</span>
+          <span className="font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">{todayCount}</span>
         </span>
         <span className="opacity-40">·</span>
         <span className="flex items-baseline gap-1">
-          <span className="opacity-70">总数</span>
+          <span className="opacity-70">总生图:</span>
           <span className="font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">{history.length}</span>
         </span>
         {isRunning && (

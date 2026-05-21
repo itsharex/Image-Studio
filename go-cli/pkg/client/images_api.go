@@ -76,6 +76,10 @@ func RequestImagesAPI(
 	if quality == "" {
 		quality = DefaultQuality
 	}
+	outputFormat := opts.OutputFormat
+	if outputFormat == "" {
+		outputFormat = OutputFormat
+	}
 
 	var (
 		url         string
@@ -88,7 +92,7 @@ func RequestImagesAPI(
 		if len(paths) == 0 {
 			return ImageResult{}, errors.New("图生图模式需要至少一张源图(请在面板里添加参考图)")
 		}
-		multipartBuf, mpType, err := buildEditsMultipart(paths, opts.MaskB64, opts.Prompt, model, size, quality, opts.NegativePrompt, opts.Seed)
+		multipartBuf, mpType, err := buildEditsMultipart(paths, opts.MaskB64, opts.Prompt, model, size, quality, outputFormat, opts.NegativePrompt, opts.Seed)
 		if err != nil {
 			return ImageResult{}, err
 		}
@@ -102,6 +106,7 @@ func RequestImagesAPI(
 			"n":               1,
 			"size":            size,
 			"quality":         quality,
+			"output_format":   outputFormat,
 			"response_format": "b64_json",
 		}
 		if opts.Seed != 0 {
@@ -270,7 +275,7 @@ func writeDataURLToTemp(dataURL string) (string, error) {
 // 多张源图按 image[] / image[1] / ... 形式串联 —— 不同中转站对多图编辑支持不一,
 // 仅第一张是 OpenAI 官方接受的最小可用形态,其余作为兼容性 best-effort。
 func buildEditsMultipart(
-	paths []string, maskB64, prompt, model, size, quality, negativePrompt string, seed int64,
+	paths []string, maskB64, prompt, model, size, quality, outputFormat, negativePrompt string, seed int64,
 ) (*bytes.Buffer, string, error) {
 	buf := &bytes.Buffer{}
 	w := multipart.NewWriter(buf)
@@ -300,6 +305,9 @@ func buildEditsMultipart(
 	_ = w.WriteField("n", "1")
 	_ = w.WriteField("size", size)
 	_ = w.WriteField("quality", quality)
+	if strings.TrimSpace(outputFormat) != "" {
+		_ = w.WriteField("output_format", outputFormat)
+	}
 	_ = w.WriteField("response_format", "b64_json")
 	if seed != 0 {
 		_ = w.WriteField("seed", fmt.Sprintf("%d", seed))

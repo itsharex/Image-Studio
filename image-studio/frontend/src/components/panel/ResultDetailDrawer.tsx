@@ -5,6 +5,7 @@ import type { HistoryItem, SizeValue } from "../../types/domain";
 import { SaveImageAs, OpenOutputDir } from "../../../wailsjs/go/backend/Service";
 
 const ASPECT_LABEL: Record<SizeValue, string> = {
+  auto: "auto",
   "1024x1024": "1:1",
   "1024x1536": "2:3",
   "1152x2048": "9:16",

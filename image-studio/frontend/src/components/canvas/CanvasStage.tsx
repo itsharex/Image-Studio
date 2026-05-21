@@ -47,6 +47,7 @@ export function CanvasStage() {
     undoStack, redoStack, undo, redo,
     compareB, compareSplit, setCompareSplit, setCompareB,
     isRunning, cancel, errorMessage, setField,
+    canvasViewResetTick,
   } = useStudioStore();
 
   // Hold-space-for-pan: while space is held, override tool to "pan".
@@ -139,12 +140,15 @@ export function CanvasStage() {
 
   // When the displayed image identity changes, clear the user's manual view
   // and per-image canvas state. This guarantees the new image starts at fit.
+  // canvasViewResetTick 触发同样的重置 —— 用于 旋转 / 翻转 / 裁剪 这些「就地编辑」
+  // 操作:currentImage.id 没变(就是原来那张),但底图尺寸 / 坐标已变,残留的 pan/zoom
+  // 与蒙版坐标系都失效了。
   useEffect(() => {
     setUserView(null);
     setMaskDataURL(null);
     drawingRef.current = { active: false, current: null };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentImage?.id]);
+  }, [currentImage?.id, canvasViewResetTick]);
 
   // setView is the only writer of userView. Treat any explicit pan/zoom as a
   // user override; auto-recenter happens by resetting to null elsewhere.
@@ -483,7 +487,10 @@ export function CanvasStage() {
           ))}
           {drawingRef.current.current && (
             <Line
-              points={drawingRef.current.current.points}
+              // ★ 必须 .slice() 出新数组引用 —— onMouseMove 原地 push 不会改变
+              // points 数组引用,react-konva 走 prop 浅比较会跳过更新,导致
+              // 拖拽期间只画起点 / 终点,松手才一次性补全所有中间点。
+              points={drawingRef.current.current.points.slice()}
               stroke={drawingRef.current.current.erase ? "rgba(226,85,85,0.55)" : "rgba(77,124,255,0.55)"}
               strokeWidth={drawingRef.current.current.size}
               lineCap="round"
@@ -530,7 +537,8 @@ export function CanvasStage() {
           )}
           {freehandRef.current && freehandRef.current.length >= 4 && (
             <Line
-              points={freehandRef.current}
+              // 同上:.slice() 强制每帧新引用,绕过 react-konva 的浅比较跳更新。
+              points={freehandRef.current.slice()}
               stroke={annotationColor}
               strokeWidth={3 / view.scale}
               lineCap="round"

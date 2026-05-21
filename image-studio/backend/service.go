@@ -208,6 +208,7 @@ func (s *Service) runJob(ctx context.Context, jobID string, opts GenerateOptions
 		Mode:           mode,
 		Size:           opts.Size,
 		Quality:        opts.Quality,
+		OutputFormat:   opts.OutputFormat,
 		MaskB64:        opts.MaskB64,
 		Seed:           opts.Seed,
 		NegativePrompt: opts.NegativePrompt,
@@ -279,7 +280,7 @@ func (s *Service) runJob(ctx context.Context, jobID string, opts GenerateOptions
 		return
 	}
 
-	imageName := buildImageName(mode, opts.Prompt, timestamp)
+	imageName := buildImageName(mode, opts.Prompt, timestamp, opts.OutputFormat)
 	savedPath := filepath.Join(imagesDir, imageName)
 	if abs, werr := writeBase64PNG(result.ImageB64, savedPath); werr == nil {
 		savedPath = abs

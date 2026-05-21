@@ -268,7 +268,7 @@ export function SettingsPanel() {
           </div>
           <div className="text-lg font-bold">Image Studio</div>
           <div className="text-[11px] text-zinc-500 mt-0.5">
-            v0.1.2 · <span onClick={() => OpenExternalURL(MIT_URL).catch(() => undefined)} className="text-emerald-500 cursor-pointer hover:text-emerald-400">MIT License</span>
+            v0.1.3 · <span onClick={() => OpenExternalURL(MIT_URL).catch(() => undefined)} className="text-emerald-500 cursor-pointer hover:text-emerald-400">MIT License</span>
           </div>
         </div>
         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">

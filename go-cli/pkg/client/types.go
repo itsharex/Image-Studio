@@ -35,6 +35,7 @@ type SizeOption struct {
 }
 
 var SizeOptions = []SizeOption{
+	{"自适应 auto(让上游决定)", "auto"},
 	{"正方形 1024x1024", "1024x1024"},
 	{"横版 1536x1024", "1536x1024"},
 	{"竖版 1024x1536", "1024x1536"},
@@ -52,6 +53,32 @@ var QualityOptions = []QualityOption{
 	{"高质量 high", "high"},
 	{"中等 medium", "medium"},
 	{"快速草稿 low", "low"},
+}
+
+// OutputFormatOption — gpt-image / Images API 支持的输出格式枚举。
+type OutputFormatOption struct {
+	Label string
+	Value string
+}
+
+// OutputFormatOptions 列出可作为 output_format 参数的图像编码。
+// "jpeg" 走标准 MIME 名,落盘时映射为 .jpg 扩展名。
+var OutputFormatOptions = []OutputFormatOption{
+	{"PNG(无损,推荐)", "png"},
+	{"JPEG(更小)", "jpeg"},
+	{"WebP", "webp"},
+}
+
+// FileExtForFormat 把 output_format(如 "jpeg")映射到文件扩展名(不含点)。
+// 未知 / 空 → 回退到默认 OutputFormat 常量(png)。
+func FileExtForFormat(format string) string {
+	switch format {
+	case "jpeg":
+		return "jpg"
+	case "jpg", "png", "webp":
+		return format
+	}
+	return OutputFormat
 }
 
 // Mode is "generate" (text-to-image) or "edit" (image-to-image).
@@ -92,6 +119,11 @@ type Options struct {
 	Mode    Mode
 	Size    string
 	Quality string
+
+	// OutputFormat:"png" | "jpeg" | "webp"。空时回退到 OutputFormat 常量。
+	// Responses API 会把它放进 image_generation 工具的 output_format 参数;
+	// Images API 同名字段(JSON 与 multipart 都支持)。落盘时按此值选扩展名。
+	OutputFormat string
 
 	// ImageDataURLs holds one or more data: URLs for edit / multi-reference
 	// requests. When non-empty the request switches to "edit" action and each

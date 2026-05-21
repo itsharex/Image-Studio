@@ -30,6 +30,10 @@ func BuildPayload(opts Options) ([]byte, error) {
 	if quality == "" {
 		quality = DefaultQuality
 	}
+	outputFormat := opts.OutputFormat
+	if outputFormat == "" {
+		outputFormat = OutputFormat
+	}
 
 	content := []map[string]any{
 		{"type": "input_text", "text": opts.Prompt},
@@ -56,7 +60,7 @@ func BuildPayload(opts Options) ([]byte, error) {
 		"action":         action,
 		"size":           size,
 		"quality":        quality,
-		"output_format":  OutputFormat,
+		"output_format":  outputFormat,
 		"moderation":     "low",
 		"partial_images": 0,
 	}

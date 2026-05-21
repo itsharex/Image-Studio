@@ -18,7 +18,9 @@
   <sub>左侧:控制面板(模式 / prompt / 风格 / 比例 / 质量) · 中:画板 + 工具栏 + 状态栏 · 右:历史记录</sub>
 </p>
 
-> **v0.1.2 重塑了整套 UI**:换成 Tailwind v4 + zinc/emerald 色调 + lucide-react 图标,字体 HarmonyOS Sans SC Medium + JetBrains Mono;每日一言条幅、动态画板棋盘格、白底黑线条新图标;输出目录拆分 `/images/` + `/log/`;Responses API 加「不优化提示词」开关让模型逐字使用你的 prompt。
+> **v0.1.2** 重塑了整套 UI:Tailwind v4 + zinc/emerald 色调 + lucide-react 图标,字体 HarmonyOS Sans SC Medium + JetBrains Mono;每日一言条幅、动态画板棋盘格、白底黑线条新图标;输出目录拆分 `/images/` + `/log/`;Responses API 加「不优化提示词」开关让模型逐字使用你的 prompt。
+>
+> **v0.1.3** 新功能:比例与质量都加 **Auto** 档让上游决定;高级参数加 **输出图片格式**(PNG / JPEG / WebP);画笔/橡皮/自由画笔 **逐点跟手**(修了 react-konva 数组引用 bug);**旋转 / 翻转 / 裁剪改为就地编辑**,不再每点一次就刷一条历史。底栏数据改为 `今日已生图 / 总生图`。
 
 ---
 
@@ -54,7 +56,7 @@
 | 📦 **大 base64 单行缓冲** | `partial_image_b64` 单行可超 4MB,自定义 8MB scanner buffer,不会被 Go bufio 默认的 64KB 截断 |
 | 🔌 **双 transport** | 默认 net/http 直连;遇到 TLS 指纹 / 代理问题可一键切到子进程 `curl`(`--http1.1 --ssl-no-revoke`) |
 | ⏹ **真正可取消** | `context.Context` 端到端,包括 `exec.CommandContext` 给 curl,「取消」按钮能立刻中断 in-flight 请求 |
-| 🖼 **完整图像编辑器** | Konva 画布、蒙版+橡皮、4 种标注、旋转/翻转/裁剪、历史对比、并发批量(1/2/4/8) |
+| 🖼 **完整图像编辑器** | Konva 画布、蒙版+橡皮、4 种标注、旋转/翻转/裁剪(就地编辑不污染历史)、历史对比 |
 | 🧩 **多标签 workspace** | 浏览器风的多 tab,每个独立 prompt/参数/源图;切换不丢现场 |
 | 🔧 **首次启动引导** | apiKey / baseURL 缺失时自动弹「上游配置」窗口,5 字段一次填完(API 形态、BASE_URL、API Key、文本模型、图像模型) |
 | ✏️ **不优化提示词开关** | Responses API 默认让文本模型把你的 prompt 重写一遍。勾上后顶层加 instructions 让模型逐字使用,适合已经精修过的 prompt |
@@ -154,8 +156,8 @@ macOS 用 `wails build -platform darwin/universal`,Linux 用 `wails build -platf
 ### 生成
 - 文生图 / 图生图(支持多张参考图,可拖动重排顺序)
 - 输入图源:文件对话框 / 拖拽窗口 / Ctrl+V 粘贴 / 从历史复用 / 双击历史项
-- 参数:4 种比例(1:1 / 2:3 / 3:2 / 16:9)· 3 档质量(1K/2K/4K)· seed · negative prompt · 5 种风格 chip
-- **并发批量** 1 / 2 / 4 / 8 张,每张自动随机 seed
+- 参数:**Auto + 5 种比例**(1:1 / 2:3 / 3:2 / 16:9 / 9:16)· **Auto + 3 档质量**(1K/2K/4K)· **输出格式**(PNG/JPEG/WebP)· seed · negative prompt · 5 种风格 chip
+- **不优化提示词** 开关:Responses API 模式下勾上后顶层加 instructions 让模型逐字使用 prompt
 - **双 API 形态**:Responses API(SSE 保活)/ Images API(标准 generations + edits)随时切换
 - 上游可配:BASE_URL、文本模型 ID、图像模型 ID、传输通道(native/curl)
 - prompt 历史(自动去重,cap 50)+ 8 个内置模板(写实/二次元/水彩/像素等)
@@ -164,7 +166,7 @@ macOS 用 `wails build -platform darwin/universal`,Linux 用 `wails build -platf
 - 缩放(鼠标滚轮以指针为中心)/ 拖动 / 双击 fit ↔ 100%
 - **蒙版**:画笔 + 橡皮,大小滑块,实时半透明叠加
 - **标注**:矩形 / 箭头 / 自由画笔 / 文字,8 色,选中后 Delete 删除
-- **图变换**(后端 Go image 库):旋转 90°/-90°、水平/竖直翻转、矩形选区裁出
+- **图变换**(后端 Go image 库):旋转 90°/-90°、水平/竖直翻转、矩形选区裁出 —— 就地编辑当前画布图、**不创建新历史条目**,「另存为」拿到最新版本
 - **历史对比**:Shift+点击进入,左右分屏 + 中间可拖动 split bar
 - 全屏 F11(隐藏左右栏专注画板)
 
@@ -188,7 +190,7 @@ macOS 用 `wails build -platform darwin/universal`,Linux 用 `wails build -platf
 - 主题:深色 / 浅色
 - 字号:小 / 中 / 大
 - 网络通道:auto / native / curl(应对 TLS 指纹 / 代理问题)
-- 参数预设保存(尺寸 + 质量 + 风格 + 批量,常用配置一键应用)
+- 参数预设保存(尺寸 + 质量 + 输出格式 + 风格,常用配置一键应用)
 - 历史导入 / 导出 JSON
 - 清除 API Key / 清空历史
 - 关于:版本号、MIT 协议链接、GitHub 仓库 / Issues 一键跳转
@@ -307,15 +309,9 @@ macOS 用 `wails build -platform darwin/universal`,Linux 用 `wails build -platf
 
 ---
 
-## 致谢 / Stack
-- [linux.do](https://linux.do/) 感谢 L站 及其社区为项目开发与交流提供支持与启发。
-- 
-- [Wails v2](https://wails.io/) — Go 后端 + Web 前端的桌面应用框架
-- [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
-- [zustand](https://github.com/pmndrs/zustand) — 状态管理
-- [react-konva](https://konvajs.org/docs/react/) — 画布渲染
-- [idb-keyval](https://github.com/jakearchibald/idb-keyval) — IndexedDB 简易封装
+## 致谢
 
+- [**linux.do**](https://linux.do/) —— 感谢 L 站及其社区为项目开发与交流提供的支持与启发。
 
 灵感来自实际使用中频繁被中转站 524 截断的痛苦经历。
 

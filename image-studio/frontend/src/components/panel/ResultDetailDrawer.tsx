@@ -4,6 +4,7 @@ import { useStudioStore } from "../../state/studioStore";
 import type { HistoryItem, SizeValue } from "../../types/domain";
 import { SaveImageAs, OpenOutputDir } from "../../../wailsjs/go/backend/Service";
 import { submitShortcutLabel } from "../../lib/platform";
+import { useBlobURL } from "../../lib/images";
 
 const ASPECT_LABEL: Record<SizeValue, string> = {
   auto: "auto",
@@ -39,6 +40,7 @@ export function ResultDetailDrawer() {
   const aspect = ASPECT_LABEL[item.size as SizeValue] ?? "";
   const quality = QUALITY_LABEL[item.quality] ?? item.quality;
   const created = new Date(item.createdAt).toLocaleString();
+  const previewURL = useBlobURL(item.imageBlob ?? null, item.previewOnly ? item.imageB64 : null);
 
   function copy(text: string, label: string) {
     navigator.clipboard.writeText(text).then(
@@ -85,7 +87,7 @@ export function ResultDetailDrawer() {
         {/* 预览 */}
         <div className="flex items-center justify-center rounded-[18px] border border-black/[0.08] bg-[var(--surface)] p-2 dark:border-white/[0.06]">
           <img
-            src={`data:image/png;base64,${item.imageB64}`}
+            src={previewURL ?? `data:image/png;base64,${item.imageB64}`}
             alt="生成结果"
             decoding="async"
             className="max-h-[280px] max-w-full rounded-[14px] object-contain"

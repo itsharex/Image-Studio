@@ -4,6 +4,7 @@ import { useStudioStore } from "../../state/studioStore";
 import type { HistoryItem, Mode } from "../../types/domain";
 import { ContextMenu, MenuItem } from "../common/ContextMenu";
 import { RawResponseModal } from "./RawResponseModal";
+import { useBlobURL } from "../../lib/images";
 
 const FAQModal = lazy(() => import("../panel/FAQModal").then((m) => ({ default: m.FAQModal })));
 
@@ -228,57 +229,19 @@ export function HistoryRail() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {filtered.map((h) => {
-            const isCurrent = currentImage?.id === h.id;
-            const isCompare = compareB?.id === h.id;
-            return (
-              <div
-                key={h.id}
-                title={h.prompt}
-                onClick={(e) => {
-                  if (e.shiftKey) {
-                    if (isCompare) setCompareB(null);
-                    else if (currentImage && currentImage.id !== h.id) setCompareB(h);
-                  } else {
-                    void selectCurrent(h);
-                  }
-                }}
-                onDoubleClick={() => reuseAsSource(h)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setMenu({ x: e.clientX, y: e.clientY, h });
-                }}
-                className={`group relative aspect-square cursor-pointer overflow-hidden rounded-[18px] border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${
-                  isCurrent
-                    ? "border-[color:var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
-                    : isCompare
-                      ? "border-blue-400 shadow-[0_0_0_1px_rgb(96_165_250)]"
-                      : "border-black/[0.06] hover:border-[color:var(--accent)]/30 dark:border-white/[0.06]"
-                }`}
-              >
-                <img
-                  src={`data:image/png;base64,${h.imageB64}`}
-                  alt={h.prompt}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] text-white backdrop-blur-sm">
-                  {h.mode === "edit" ? "Edit" : "Generate"}
-                </span>
-                {isCompare && (
-                  <span className="absolute right-1.5 top-1.5 rounded-full bg-blue-500 px-1.5 py-0.5 text-[9px] text-white">B</span>
-                )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteHistoryItem(h.id); }}
-                  title="删除"
-                  className="absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
+          {filtered.map((h) => (
+            <HistoryTile
+              key={h.id}
+              item={h}
+              isCurrent={currentImage?.id === h.id}
+              isCompare={compareB?.id === h.id}
+              onSelect={selectCurrent}
+              onToggleCompare={(next) => setCompareB(next)}
+              onReuse={reuseAsSource}
+              onDelete={deleteHistoryItem}
+              onOpenMenu={(x, y) => setMenu({ x, y, h })}
+            />
+          ))}
         </div>
       )}
 
@@ -295,5 +258,73 @@ export function HistoryRail() {
       <Info className="hidden" /><ListRestart className="hidden" /><RotateCw className="hidden" /><Sparkles className="hidden" />
       <Trash2 className="hidden" />
     </aside>
+  );
+}
+
+function HistoryTile({
+  item,
+  isCurrent,
+  isCompare,
+  onSelect,
+  onToggleCompare,
+  onReuse,
+  onDelete,
+  onOpenMenu,
+}: {
+  item: HistoryItem;
+  isCurrent: boolean;
+  isCompare: boolean;
+  onSelect: (h: HistoryItem) => void;
+  onToggleCompare: (h: HistoryItem | null) => void;
+  onReuse: (h: HistoryItem) => void | Promise<void>;
+  onDelete: (id: string) => void | Promise<void>;
+  onOpenMenu: (x: number, y: number) => void;
+}) {
+  const previewURL = useBlobURL(item.previewBlob ?? item.imageBlob ?? null, item.previewOnly ? item.imageB64 : null);
+  return (
+    <div
+      title={item.prompt}
+      onClick={(e) => {
+        if (e.shiftKey) {
+          if (isCompare) onToggleCompare(null);
+          else if (item.id !== undefined) onToggleCompare(item);
+        } else {
+          void onSelect(item);
+        }
+      }}
+      onDoubleClick={() => onReuse(item)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onOpenMenu(e.clientX, e.clientY);
+      }}
+      className={`group relative aspect-square cursor-pointer overflow-hidden rounded-[18px] border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${
+        isCurrent
+          ? "border-[color:var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
+          : isCompare
+            ? "border-blue-400 shadow-[0_0_0_1px_rgb(96_165_250)]"
+            : "border-black/[0.06] hover:border-[color:var(--accent)]/30 dark:border-white/[0.06]"
+      }`}
+    >
+      <img
+        src={previewURL ?? `data:image/png;base64,${item.imageB64}`}
+        alt={item.prompt}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover"
+      />
+      <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] text-white backdrop-blur-sm">
+        {item.mode === "edit" ? "Edit" : "Generate"}
+      </span>
+      {isCompare && (
+        <span className="absolute right-1.5 top-1.5 rounded-full bg-blue-500 px-1.5 py-0.5 text-[9px] text-white">B</span>
+      )}
+      <button
+        onClick={(e) => { e.stopPropagation(); void onDelete(item.id); }}
+        title="删除"
+        className="absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
   );
 }

@@ -55,6 +55,7 @@ import {
   suggestedImportNameForHistory,
   validateBaseURL,
 } from "../lib/security";
+import { base64ToBlob, blobToBase64, createPreviewBlob, getImageDimensionsFromBase64 } from "../lib/images";
 
 // 单个 API 形态的上游 5 字段(去掉 apiMode 本身)。
 // 其中 apiKey 只进后端凭据存储;其余字段走 localStorage。
@@ -373,55 +374,17 @@ function persistTrimmedHistory(items: HistoryItem[]): void {
   void pruneHistoryStorage(keptIDs);
 }
 
-function decodeBase64Bytes(b64: string): Uint8Array | null {
-  try {
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
-  } catch {
-    return null;
-  }
-}
-
 async function createPreviewB64(b64: string, maxEdge = 192): Promise<string> {
-  const bytes = decodeBase64Bytes(b64);
-  if (!bytes) return b64;
-  const cloned = new Uint8Array(bytes.byteLength);
-  cloned.set(bytes);
-  const blob = new Blob([cloned], { type: "image/png" });
-  const bitmap = await createImageBitmap(blob);
-  try {
-    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
-    if (scale >= 0.999) return b64;
-    const w = Math.max(1, Math.round(bitmap.width * scale));
-    const h = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return b64;
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    const dataURL = canvas.toDataURL("image/jpeg", 0.72);
-    return stripDataURLPrefix(dataURL);
-  } finally {
-    bitmap.close();
-  }
+  const blob = base64ToBlob(b64);
+  const preview = await createPreviewBlob(blob, maxEdge);
+  if (preview === blob) return b64;
+  return await blobToBase64(preview);
 }
 
 // Compute image natural dimensions from a base64 PNG by reading the IHDR chunk.
 // Cheap, sync, doesn't require a full image decode.
 function imageDims(b64: string): { w: number; h: number } | null {
-  try {
-    const bin = atob(b64.slice(0, 64)); // first ~48 bytes is enough for IHDR
-    // PNG signature (8) + length(4) + "IHDR"(4) + width(4) + height(4)
-    const view = new DataView(new ArrayBuffer(bin.length));
-    for (let i = 0; i < bin.length; i++) view.setUint8(i, bin.charCodeAt(i));
-    const w = view.getUint32(16, false);
-    const h = view.getUint32(20, false);
-    if (w > 0 && h > 0 && w < 20000 && h < 20000) return { w, h };
-  } catch { /* not a PNG or atob failed */ }
-  return null;
+  return getImageDimensionsFromBase64(b64);
 }
 
 // If the user drew annotations, append a brief positional hint to the prompt.
@@ -1398,9 +1361,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const b64 = await fileToBase64(file);
       const result = await ImportImageFromB64(b64, file.name);
       const previewB64 = await createPreviewB64(b64);
+      const previewBlob = base64ToBlob(previewB64);
+      const fullBlob = base64ToBlob(b64);
       const fullItem: HistoryItem = {
         id: genId(),
         imageB64: b64,
+        imageBlob: fullBlob,
+        previewBlob,
         prompt: `(导入)${file.name}`,
         mode: "edit",
         size: "1024x1024",
@@ -1506,7 +1473,7 @@ async function ensureFullHistoryItem(item: HistoryItem | null): Promise<HistoryI
       fullB64 = await loadHistoryFullImage(item.id).catch(() => "");
     }
     if (!fullB64) return item;
-    const next: HistoryItem = { ...item, imageB64: fullB64, previewOnly: false };
+    const next: HistoryItem = { ...item, imageB64: fullB64, imageBlob: base64ToBlob(fullB64), previewOnly: false };
     const state = useStudioStore.getState();
     useStudioStore.setState({
       currentImage: state.currentImage?.id === item.id ? next : state.currentImage,
@@ -1584,9 +1551,13 @@ async function launchOneJob(
         const rd = [elapsedSec, ...store.getState().recentDurations].slice(0, 5);
         const willNotify = typeof document !== "undefined" && document.visibilityState !== "visible";
         const previewB64 = await createPreviewB64(r.imageB64);
+        const previewBlob = base64ToBlob(previewB64);
+        const fullBlob = base64ToBlob(r.imageB64);
         const fullItem: HistoryItem = {
           id: cryptoIDFallback(),
           imageB64: r.imageB64,
+          imageBlob: fullBlob,
+          previewBlob,
           prompt: r.prompt,
           revisedPrompt: r.revisedPrompt,
           mode: r.mode as Mode,

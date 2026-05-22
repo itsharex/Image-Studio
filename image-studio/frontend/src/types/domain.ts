@@ -41,6 +41,7 @@ export interface SourceImage {
   path: string;
   name: string;
   size: number;       // bytes; 0 when unknown (e.g. reused-from-history)
+  imageBlob?: Blob | null;
   // Optional base64 for canvas preview, only kept when freshly imported.
   // Items added via OpenImageDialog don't carry b64 to keep memory bounded.
   imageB64?: string;
@@ -51,6 +52,8 @@ export interface HistoryItem {
   // For history entries this may be a compact preview; currentImage/resultDetail
   // may hold the full-resolution image.
   imageB64: string;
+  imageBlob?: Blob | null;
+  previewBlob?: Blob | null;
   previewOnly?: boolean;
   prompt: string;
   revisedPrompt?: string;

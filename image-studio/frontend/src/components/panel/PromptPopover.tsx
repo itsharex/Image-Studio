@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { isWindows } from "../../lib/platform";
+import { isWindows, usesAppleUI } from "../../lib/platform";
 
 const PROMPT_TEMPLATES: { label: string; text: string }[] = [
   { label: "写实摄影", text: "photorealistic, professional photography, 35mm, natural lighting, sharp focus, high detail" },
@@ -21,7 +21,7 @@ export function PromptPopover({ onClose, onPick }: { onClose: () => void; onPick
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`absolute left-0 right-0 top-full z-50 mt-1.5 flex max-h-[300px] flex-col overflow-hidden border border-black/[0.08] bg-white/95 shadow-[0_24px_60px_rgb(15_23_42_/_0.16)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/95 ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}
+      className={`absolute left-0 right-0 top-full z-50 mt-1.5 flex max-h-[300px] flex-col overflow-hidden border border-black/[0.08] bg-white/95 shadow-[0_24px_60px_rgb(15_23_42_/_0.16)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/95 ${usesAppleUI ? "liquid-glass-panel" : ""} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}
     >
       <div className="flex items-center border-b border-black/[0.06] dark:border-white/[0.04]">
         <button

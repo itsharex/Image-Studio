@@ -10,7 +10,7 @@ import { StatusBar } from "./components/canvas/StatusBar";
 import { HistoryRail } from "./components/history/HistoryRail";
 import { ToastContainer } from "./components/common/ToastContainer";
 import { useStudioStore } from "./state/studioStore";
-import { isMac, isWindows } from "./lib/platform";
+import { isMac, usesAppleUI } from "./lib/platform";
 
 const UpstreamConfigModal = lazy(() => import("./components/panel/UpstreamConfigModal").then((m) => ({ default: m.UpstreamConfigModal })));
 const ResultDetailDrawer = lazy(() => import("./components/panel/ResultDetailDrawer").then((m) => ({ default: m.ResultDetailDrawer })));
@@ -20,6 +20,46 @@ function App() {
   const importImageFile = useStudioStore((s) => s.importImageFile);
   const fullscreen = useStudioStore((s) => s.fullscreen);
   useEffect(() => { bootstrap(); }, [bootstrap]);
+
+  // Liquid Glass needs a moving light source so the material reacts to the
+  // person rather than sitting as a static translucent layer.
+  useEffect(() => {
+    if (!usesAppleUI || typeof window === "undefined") return;
+    const root = document.documentElement;
+    let raf = 0;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+
+    const write = () => {
+      raf = 0;
+      root.style.setProperty("--lg-pointer-x", `${Math.round(x)}px`);
+      root.style.setProperty("--lg-pointer-y", `${Math.round(y)}px`);
+      root.style.setProperty("--lg-pointer-xp", `${Math.round((x / Math.max(window.innerWidth, 1)) * 100)}%`);
+      root.style.setProperty("--lg-pointer-yp", `${Math.round((y / Math.max(window.innerHeight, 1)) * 100)}%`);
+    };
+    const queueWrite = () => {
+      if (!raf) raf = window.requestAnimationFrame(write);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      x = e.clientX;
+      y = e.clientY;
+      queueWrite();
+    };
+    const onResize = () => {
+      x = window.innerWidth / 2;
+      y = window.innerHeight / 2;
+      queueWrite();
+    };
+
+    write();
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("resize", onResize);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // Global app-level shortcuts. Canvas-scoped shortcuts (undo/redo, tool
   // switching, Esc) stay in CanvasStage so they don't fire when no image is up.
@@ -116,21 +156,7 @@ function App() {
 
   return (
     <div className="app-root relative">
-      {/* Ambient background blobs — 模糊圆球点缀,主界面之下永远不挡 */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-        {isWindows ? (
-          <>
-            <div className="absolute inset-x-0 top-0 h-[220px] bg-linear-to-b from-white/18 to-transparent dark:from-white/5" />
-            <div className="absolute left-[12%] top-[10%] h-[320px] w-[320px] rounded-[28px] bg-sky-500/[0.035] blur-3xl" />
-            <div className="absolute right-[6%] top-[18%] h-[260px] w-[420px] rounded-[36px] bg-cyan-400/[0.03] blur-3xl" />
-          </>
-        ) : (
-          <>
-            <div className="absolute left-[18%] top-[-8%] h-[460px] w-[460px] rounded-full bg-sky-500/[0.05] blur-3xl" />
-            <div className="absolute right-[-8%] top-[55%] h-[400px] w-[400px] rounded-full bg-cyan-400/[0.035] blur-3xl" />
-          </>
-        )}
-      </div>
+      <div className="liquid-ambient" aria-hidden="true" />
 
       <AppHeader />
       <WorkspaceBar />

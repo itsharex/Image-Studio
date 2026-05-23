@@ -5,7 +5,7 @@ import type { HistoryItem, Mode } from "../../types/domain";
 import { ContextMenu, MenuItem } from "../common/ContextMenu";
 import { RawResponseModal } from "./RawResponseModal";
 import { useBlobURL } from "../../lib/images";
-import { isWindows } from "../../lib/platform";
+import { isWindows, usesAppleUI } from "../../lib/platform";
 
 const FAQModal = lazy(() => import("../panel/FAQModal").then((m) => ({ default: m.FAQModal })));
 
@@ -101,8 +101,8 @@ export function HistoryRail() {
   if (fullscreen) return null;
 
   return (
-    <aside className="flex w-[292px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-3 py-4 backdrop-blur-2xl">
-      <div className={`border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <aside className={`flex w-[292px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-3 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""}`}>
+      <div className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
@@ -134,7 +134,7 @@ export function HistoryRail() {
                 title={ready ? `${m} · 已配置 · ${cfg.baseURL.replace(/^https?:\/\//, "")}` : `${m} · 未配置`}
                 className={`platform-chip flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors ${
                   active
-                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
+                    ? "active bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
                     : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
                 } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
               >
@@ -169,7 +169,7 @@ export function HistoryRail() {
         </p>
       </div>
 
-      <div className={`border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+      <div className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
             历史 <span className="font-mono-token text-zinc-500">({filtered.length}{filtered.length !== history.length && `/${history.length}`})</span>
@@ -225,7 +225,7 @@ export function HistoryRail() {
       )}
 
       {filtered.length === 0 ? (
-        <div className={`border border-black/[0.05] bg-white/70 py-8 text-center text-xs text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+        <div className={`platform-card border border-black/[0.05] bg-white/70 py-8 text-center text-xs text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
           {q || modeF !== "all" || dateF !== "all" ? "没有匹配项" : "还没有结果"}
         </div>
       ) : (

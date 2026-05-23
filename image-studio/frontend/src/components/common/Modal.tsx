@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
-import { isWindows } from "../../lib/platform";
+import { isWindows, usesAppleUI } from "../../lib/platform";
 
 // 居中 modal:点击背景 / Esc 关闭。
 export function Modal({
@@ -30,7 +30,7 @@ export function Modal({
       <div
         style={{ width }}
         onClick={(e) => e.stopPropagation()}
-        className={`flex max-h-[86vh] flex-col overflow-hidden border border-black/[0.08] bg-white/92 shadow-[0_30px_80px_rgb(15_23_42_/_0.18)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/92 ${isWindows ? "rounded-[14px]" : "rounded-[22px]"}`}
+        className={`flex max-h-[86vh] flex-col overflow-hidden border border-black/[0.08] bg-white/92 shadow-[0_30px_80px_rgb(15_23_42_/_0.18)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/92 ${usesAppleUI ? "liquid-glass-panel" : ""} ${isWindows ? "rounded-[14px]" : "rounded-[22px]"}`}
       >
         {title && (
           <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3.5 dark:border-white/[0.04]">

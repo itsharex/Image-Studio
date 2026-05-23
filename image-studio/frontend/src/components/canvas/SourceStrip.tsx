@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import { useBlobURL } from "../../lib/images";
-import { isWindows } from "../../lib/platform";
+import { isWindows, usesAppleUI } from "../../lib/platform";
 
 export function SourceStrip() {
   const sources = useStudioStore((s) => s.sources);
@@ -18,7 +18,7 @@ export function SourceStrip() {
   if (sources.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto border-b border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 backdrop-blur-2xl">
+    <div className={`flex items-center gap-2 overflow-x-auto border-b border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 backdrop-blur-2xl ${usesAppleUI ? "liquid-glass-bar" : ""}`}>
       <span className="text-[11px] text-zinc-500 shrink-0">参考图 {sources.length} 张:</span>
       {sources.map((s, i) => (
         <SourceTile

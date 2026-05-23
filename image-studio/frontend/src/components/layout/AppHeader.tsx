@@ -13,6 +13,8 @@ export function AppHeader() {
   return (
     <header
       className={`drag-region sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border)] bg-[var(--toolbar)] backdrop-blur-2xl ${
+        usesAppleUI ? "liquid-glass-bar" : ""
+      } ${
         usesAppleUI
           ? "min-h-[58px] pl-[92px] pr-5 pb-2 pt-3"
           : isWindows
@@ -118,7 +120,7 @@ function HeaderToggleBtn({ active, children, onClick, title }: {
       title={title}
       className={`platform-chip no-drag flex h-7 w-7 items-center justify-center transition-all ${
         active
-          ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
+          ? "active bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
           : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       } ${isWindows ? "rounded-[7px]" : "rounded-full"}`}
     >

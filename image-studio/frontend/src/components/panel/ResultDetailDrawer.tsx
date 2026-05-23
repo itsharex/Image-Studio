@@ -3,7 +3,7 @@ import { ClipboardCopy, Folder, RotateCw, Save, Sparkles, X } from "lucide-react
 import { useStudioStore } from "../../state/studioStore";
 import type { HistoryItem, SizeValue } from "../../types/domain";
 import { SaveImageAs, OpenOutputDir } from "../../../wailsjs/go/backend/Service";
-import { isWindows, submitShortcutLabel } from "../../lib/platform";
+import { isWindows, submitShortcutLabel, usesAppleUI } from "../../lib/platform";
 import { useBlobURL } from "../../lib/images";
 
 const ASPECT_LABEL: Record<SizeValue, string> = {
@@ -68,7 +68,7 @@ export function ResultDetailDrawer() {
     <aside
       role="dialog"
       aria-label="生成详情"
-      className="fixed bottom-0 right-0 top-0 z-[9000] flex w-[420px] flex-col border-l border-black/[0.08] bg-white/92 shadow-[0_26px_80px_rgb(15_23_42_/_0.18)] backdrop-blur-2xl animate-[rd-in_180ms_ease-out] dark:border-white/[0.08] dark:bg-zinc-900/92"
+      className={`fixed bottom-0 right-0 top-0 z-[9000] flex w-[420px] flex-col border-l border-black/[0.08] bg-white/92 shadow-[0_26px_80px_rgb(15_23_42_/_0.18)] backdrop-blur-2xl animate-[rd-in_180ms_ease-out] dark:border-white/[0.08] dark:bg-zinc-900/92 ${usesAppleUI ? "liquid-sidebar" : ""}`}
       style={{ animation: "rd-in 180ms ease-out" }}
     >
       <style>{`@keyframes rd-in { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
@@ -166,7 +166,7 @@ function Section({ title, hint, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section className={`border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <section className={`platform-card border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
       <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{title}</h3>
       {hint && <p className="text-[10px] text-zinc-500 mb-2 leading-relaxed">{hint}</p>}
       {children}

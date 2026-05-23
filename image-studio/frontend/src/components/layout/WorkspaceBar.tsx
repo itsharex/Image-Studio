@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { isWindows } from "../../lib/platform";
+import { isWindows, usesAppleUI } from "../../lib/platform";
 
 // Browser-tab style strip. 每个 tab = 独立 workspace,历史栏共享。
 // 单 workspace 时不显示。
@@ -25,7 +25,7 @@ export function WorkspaceBar() {
   }
 
   return (
-    <div className={`drag-region flex items-center overflow-x-auto border-b border-[var(--border)] bg-[var(--toolbar)] backdrop-blur-2xl ${isWindows ? "gap-1 px-3 py-1.5" : "gap-1.5 px-4 py-2"}`}>
+    <div className={`drag-region flex items-center overflow-x-auto border-b border-[var(--border)] bg-[var(--toolbar)] backdrop-blur-2xl ${usesAppleUI ? "liquid-glass-bar" : ""} ${isWindows ? "gap-1 px-3 py-1.5" : "gap-1.5 px-4 py-2"}`}>
       {workspaces.map((w) => {
         const active = w.id === activeWorkspaceId;
         const isEditing = editingId === w.id;
@@ -38,7 +38,7 @@ export function WorkspaceBar() {
             className={
               `platform-tab no-drag group flex shrink-0 items-center gap-2 text-[12px] transition-all cursor-pointer ${isWindows ? "h-8 rounded-[10px] px-3" : "h-8 rounded-full px-3"} ` +
               (active
-                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/[0.06] dark:bg-zinc-900 dark:text-zinc-100 dark:ring-white/[0.08]"
+                ? "active bg-white text-zinc-900 shadow-sm ring-1 ring-black/[0.06] dark:bg-zinc-900 dark:text-zinc-100 dark:ring-white/[0.08]"
                 : "text-zinc-500 hover:bg-black/[0.04] hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.06] dark:hover:text-zinc-200")
             }
           >

@@ -5,7 +5,7 @@ import {
 import { useStudioStore } from "../../state/studioStore";
 import { SizeValue, QualityValue, Mode, OutputFormatValue, OUTPUT_FORMAT_OPTIONS } from "../../types/domain";
 import { SettingsPanel } from "./SettingsPanel";
-import { isWindows, submitShortcutLabel } from "../../lib/platform";
+import { isWindows, submitShortcutLabel, usesAppleUI } from "../../lib/platform";
 
 const PromptPopover = lazy(() => import("./PromptPopover").then((m) => ({ default: m.PromptPopover })));
 
@@ -59,7 +59,7 @@ export function ControlPanel() {
   );
 
   return (
-    <div className={`flex w-[336px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] px-4 py-4 backdrop-blur-2xl ${isWindows ? "pt-3" : ""}`}>
+    <div className={`flex w-[336px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${isWindows ? "pt-3" : ""}`}>
       <section className="platform-card px-4 py-3">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -206,7 +206,7 @@ export function ControlPanel() {
                 onClick={() => setField("styleTag", active ? "" : s.id)}
                 className={`platform-chip px-2.5 py-1.5 text-xs ring-1 transition-colors ${
                   active
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
+                    ? "active bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
                     : "text-zinc-600 dark:text-zinc-400 ring-black/[0.08] dark:ring-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-200 hover:ring-[color:var(--accent)]/30"
                 } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
               >
@@ -305,13 +305,13 @@ export function ControlPanel() {
         <button
           onClick={() => setAdvancedOpen((v) => !v)}
           type="button"
-          className={`flex w-full items-center justify-between border border-black/[0.05] bg-white/70 px-4 py-3 text-xs text-zinc-500 transition-colors hover:text-zinc-900 dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:text-zinc-200 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`platform-card flex w-full items-center justify-between border border-black/[0.05] bg-white/70 px-4 py-3 text-xs text-zinc-500 transition-colors hover:text-zinc-900 dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:text-zinc-200 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
         >
           <span className="uppercase tracking-[0.12em]">高级参数</span>
           <span className="text-[10px] opacity-60">{advancedOpen ? "收起 ▾" : "展开 ▸"}</span>
         </button>
         {advancedOpen && (
-          <div className={`mt-2 flex flex-col gap-2 border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+          <div className={`platform-card mt-2 flex flex-col gap-2 border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
             <textarea
               value={negativePrompt}
               placeholder="负向提示词(不希望出现的元素)..."
@@ -376,7 +376,7 @@ export function ControlPanel() {
           <button
             onClick={submit}
             disabled={!apiKey || !prompt}
-            className={`w-full bg-[var(--accent)] py-3 font-semibold text-white transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 ${isWindows ? "rounded-[10px]" : "rounded-full"}`}
+            className={`liquid-primary-button w-full bg-[var(--accent)] py-3 font-semibold text-white transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-800 ${isWindows ? "rounded-[10px]" : "rounded-full"}`}
           >
             {mode === "edit" ? "编辑" : "生成"}
           </button>
@@ -403,7 +403,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <section className={`platform-card border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{label}</label>
         {trailing}
@@ -430,9 +430,9 @@ function SegItem({ active, onClick, children }: {
     <button
       type="button"
       onClick={onClick}
-      className={`platform-chip flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+        className={`platform-chip flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
         active
-          ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
+          ? "active bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
           : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
       } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
     >

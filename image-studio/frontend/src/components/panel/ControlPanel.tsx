@@ -4,7 +4,6 @@ import {
 } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import { SizeValue, QualityValue, Mode, OutputFormatValue, OUTPUT_FORMAT_OPTIONS } from "../../types/domain";
-import { SettingsPanel } from "./SettingsPanel";
 import { isWindows, submitShortcutLabel, usesAppleUI } from "../../lib/platform";
 
 const PromptPopover = lazy(() => import("./PromptPopover").then((m) => ({ default: m.PromptPopover })));
@@ -413,8 +412,6 @@ export function ControlPanel() {
           </p>
         )}
       </div>
-
-      <SettingsPanel />
     </div>
   );
 }

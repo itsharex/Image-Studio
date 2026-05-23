@@ -14,11 +14,13 @@ import { isMac } from "./lib/platform";
 
 const UpstreamConfigModal = lazy(() => import("./components/panel/UpstreamConfigModal").then((m) => ({ default: m.UpstreamConfigModal })));
 const ResultDetailDrawer = lazy(() => import("./components/panel/ResultDetailDrawer").then((m) => ({ default: m.ResultDetailDrawer })));
+const SettingsPanel = lazy(() => import("./components/panel/SettingsPanel").then((m) => ({ default: m.SettingsPanel })));
 
 function App() {
   const bootstrap = useStudioStore((s) => s.bootstrap);
   const importImageFile = useStudioStore((s) => s.importImageFile);
   const fullscreen = useStudioStore((s) => s.fullscreen);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => { bootstrap(); }, [bootstrap]);
 
   // Global app-level shortcuts. Canvas-scoped shortcuts (undo/redo, tool
@@ -118,7 +120,7 @@ function App() {
     <div className="app-root relative">
       <div className="liquid-ambient" aria-hidden="true" />
 
-      <AppHeader />
+      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
       <WorkspaceBar />
       <div className={`studio ${fullscreen ? "fullscreen" : ""}`}>
         <ControlPanel />
@@ -142,6 +144,9 @@ function App() {
       </div>
       <FooterBar />
       <UpstreamConfigGate />
+      <Suspense fallback={null}>
+        <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      </Suspense>
       <Suspense fallback={null}>
         <ResultDetailDrawer />
       </Suspense>

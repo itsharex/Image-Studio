@@ -98,8 +98,10 @@ cd Image-Studio/image-studio
 # 开发模式(Vite 热重载 + DevTools)
 wails dev
 
-# 生产构建,输出到 build/bin/image-studio.exe (~29MB,内嵌字体 + Tailwind 资源)
-wails build
+# 生产构建
+# macOS: 直接产出本地可运行的 universal .app
+cd ..
+bash scripts/package-local-macos-app.sh
 ```
 
 Android APK:
@@ -134,7 +136,7 @@ npm run build:android-pad
 ```
 
 这些命令只切换主题层(`VITE_TARGET_PLATFORM`),不会修改业务逻辑和数据流。
-默认的 `npm run dev` / `npm run build` 现在也会按宿主平台自动选择 `macos` / `windows` / `linux` 主题模式,所以 `wails dev` 和 `wails build` 不需要额外参数就会编译出对应客户端的原生主题。
+默认的 `npm run dev` / `npm run build` 现在也会按宿主平台自动选择 `macos` / `windows` / `linux` 主题模式,所以 `wails dev` 和桌面构建都不需要额外主题参数。
 
 ### 多端原生主题
 
@@ -148,7 +150,30 @@ Android 壳层工程位于 `android-shell/`。CI 会分别执行 `assemblePhoneR
 
 运行时前端会自动给根节点注入 `data-platform` / `data-target-platform` / `data-ui-family`,CSS token 和组件壳层按这些属性切换,因此平台主题和 Android 手机/Pad 布局可以继续扩展,而不需要动生成、画布、历史等主逻辑。
 
-macOS 直接 `wails build`(产物 `image-studio.app`,通用二进制 Apple Silicon + Intel)。Linux 需要先装 `libgtk-3-dev libwebkit2gtk-4.1-dev`(Ubuntu 24.04 / 桌面 Debian 同款)然后 `wails build -tags webkit2_41`;22.04 系是 `libwebkit2gtk-4.0-dev`,直接 `wails build` 不加 tag。
+### 多平台内核验证入口
+
+仓库内已经自带几条验证入口,用于确保 desktop / Android / Worker 共用的远程内核和宿主能力分层不回退:
+
+```bash
+# 1) 本地全量验证(frontend tests/build + worker tests + local smoke + android assemble + go test)
+node scripts/verify-local-platform-kernel.mjs
+
+# 2) 单独验证 macOS 本地发布包(universal / bundle id / 签名 / build + go test)
+node scripts/verify-local-macos-release.mjs
+
+# 3) 本地 HTTP smoke(前端 remote 模式假设 + Worker + mock upstream)
+node scripts/local-smoke-check.mjs
+
+# 4) 真实上游 direct vs worker 对比验证
+#    可先复制 scripts/live-verify.env.example 到 .env.live / .env.local
+node scripts/live-verify.mjs
+```
+
+CI 侧也有两条对应 workflow:
+- `.github/workflows/verify-platform-kernel.yml`：本地可证明部分的自动化验证
+- `.github/workflows/live-verify-platform-kernel.yml`：拿到 secrets 后手动触发的真实上游验证
+
+macOS 推荐直接 `bash scripts/package-local-macos-app.sh`，产物在 `image-studio/build/bin/Image Studio.app`，默认生成 `Apple Silicon + Intel` 通用二进制并完成本地自签。Linux 需要先装 `libgtk-3-dev libwebkit2gtk-4.1-dev`(Ubuntu 24.04 / 桌面 Debian 同款)然后 `wails build -tags webkit2_41`;22.04 系是 `libwebkit2gtk-4.0-dev`,直接 `wails build` 不加 tag。
 
 ---
 

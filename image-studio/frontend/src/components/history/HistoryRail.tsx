@@ -1,13 +1,11 @@
 import { Suspense, lazy, useDeferredValue, useMemo, useRef, useState } from "react";
-import { Clipboard, Copy, FileText, HelpCircle, Info, ListRestart, Plug, RotateCw, Settings, Sparkles, Split, Trash2, X } from "lucide-react";
+import { Clipboard, Copy, FileText, Info, ListRestart, Plug, RotateCw, Settings, Sparkles, Split, Trash2, X } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import type { HistoryItem, Mode } from "../../types/domain";
 import { ContextMenu, MenuItem } from "../common/ContextMenu";
 import { RawResponseModal } from "./RawResponseModal";
 import { useBlobURL } from "../../lib/images";
-import { isWindows, usesAndroidUI, usesAppleUI } from "../../lib/platform";
-
-const FAQModal = lazy(() => import("../panel/FAQModal").then((m) => ({ default: m.FAQModal })));
+import { isAndroidPhone, isMac, isWindows, usesAndroidUI, usesAppleUI } from "../../lib/platform";
 
 type ModeFilter = "all" | Mode;
 type DateFilter = "all" | "today" | "week";
@@ -39,7 +37,6 @@ export function HistoryRail() {
   const [dateF, setDateF] = useState<DateFilter>("all");
   const [menu, setMenu] = useState<{ x: number; y: number; h: HistoryItem } | null>(null);
   const [rawPath, setRawPath] = useState<string | null>(null);
-  const [faqOpen, setFaqOpen] = useState(false);
   // 防快速连点产生竞态:每次点击递增 epoch,后台 materialize 全图 resolve
   // 时跟当前 epoch 比对,过时的就丢弃。之前的写法是先 await 再 setField,
   // 慢的请求会在用户已经点了另一张图之后把画布盖回去。
@@ -55,6 +52,7 @@ export function HistoryRail() {
       return hay.includes(needle);
     });
   }, [history, deferredQ, modeF, dateF]);
+  const showHistoryFilters = history.length > 4 || q.trim().length > 0 || modeF !== "all" || dateF !== "all";
 
   async function selectCurrent(h: HistoryItem) {
     const myEpoch = ++selectEpochRef.current;
@@ -69,7 +67,7 @@ export function HistoryRail() {
     }
     // 3) previewOnly 需要后台从磁盘 / IndexedDB 读全图;读完只在 epoch 没变
     //    时才提交全图替换。epoch 变了说明用户已经点了别的图,这次结果作废。
-    if (h.savedPath && h.previewOnly) {
+    if (h.previewOnly) {
       try {
         const full = await useStudioStore.getState().materializeCurrentImage?.(h);
         if (selectEpochRef.current === myEpoch && full) {
@@ -105,7 +103,7 @@ export function HistoryRail() {
       { label: "查看 raw 响应", icon: "📄", disabled: !h.rawPath, onClick: () => setRawPath(h.rawPath ?? null) },
       { separatorBefore: true, label: "应用参数(不生成)", icon: "📥", onClick: () => applyHistoryParams(h) },
       { label: "以此参数重新生成", icon: "↻", onClick: () => regenerateFromHistory(h) },
-      { separatorBefore: true, label: "设为源图", icon: "→", onClick: () => reuseAsSource(h), disabled: !h.savedPath },
+      { separatorBefore: true, label: "设为源图", icon: "→", onClick: () => reuseAsSource(h), disabled: !(h.savedPath || h.imageB64) },
       { label: "用作对比图 (B)", icon: "⇄", onClick: () => setCompareB(h), disabled: currentImage?.id === h.id },
       { label: "删除", icon: "✕", danger: true, separatorBefore: true, onClick: () => {
         if (window.confirm(`确定删除此历史项?\n\n${h.prompt?.slice(0, 60) || "(无 prompt)"}`)) {
@@ -118,11 +116,11 @@ export function HistoryRail() {
   if (fullscreen) return null;
 
   return (
-    <aside className={`history-rail flex w-[292px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-3 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI ? "android-surface-pane" : ""}`}>
-      <div className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <aside className={`history-rail flex w-[292px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-3 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI && !isAndroidPhone ? "android-surface-pane" : ""}`}>
+      <div className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+            <h3 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
               上游
             </h3>
             <span className={`h-1.5 w-1.5 rounded-full ${apiKey && baseURL ? "bg-[var(--accent)] shadow-[0_0_6px_rgb(0_122_255_/_0.55)]" : "bg-red-500"}`} />
@@ -130,13 +128,7 @@ export function HistoryRail() {
               {apiKey && baseURL ? "已配置" : "未配置"}
             </span>
           </div>
-          <button
-            onClick={() => setFaqOpen(true)}
-            title="关于 API Key 分组、模型选择等"
-            className="inline-flex items-center gap-0.5 text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)]"
-          >
-            <HelpCircle className="h-3 w-3" /> FAQ
-          </button>
+          <span className="text-[10px] text-zinc-500">当前连接</span>
         </div>
 
         {/* v0.1.6: profile dropdown 替换原来的 [Responses | Images] 二选一 chip。
@@ -166,78 +158,90 @@ export function HistoryRail() {
           </div>
         ) : (
           <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
-            还没有上游配置,点下方「上游配置」建一条。
+            还没有上游配置，先建一条再开始生成。
           </p>
         )}
 
-        <div className="mt-2 flex gap-1.5">
+        <div className={`mt-2 flex ${isAndroidPhone ? "gap-1" : "gap-1.5"}`}>
           <button
             onClick={openUpstreamConfig}
-            className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
           >
-            <Settings className="h-3.5 w-3.5" /> 上游配置
+            <Settings className="h-3.5 w-3.5" /> {isAndroidPhone ? "配置" : "上游配置"}
           </button>
           <button
             onClick={testAPIKey}
             disabled={!apiKey.trim() || !baseURL.trim() || isTestingKey}
-            title="发送一个最小请求验证 BASE_URL + API Key + 分组权限"
-            className={`platform-action-btn inline-flex items-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            title="验证当前配置是否可连通"
+            className={`platform-action-btn inline-flex items-center gap-1.5 border border-black/[0.08] px-3 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
           >
-            <Plug className={`h-3.5 w-3.5 ${isTestingKey ? "animate-spin" : ""}`} /> {isTestingKey ? "测试中..." : "测试"}
+            <Plug className={`h-3.5 w-3.5 ${isTestingKey ? "animate-spin" : ""}`} /> {isTestingKey ? "检查中..." : isAndroidPhone ? "连通性" : "测试"}
           </button>
         </div>
 
-        <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-500">
-          {apiMode === "responses"
-            ? "Responses API · key 需绑「拥有 gpt-5.5 模型的分组」(可防 CF 524)"
-            : "Images API · 可使用标准 image-2 / image API 分组"}
-        </p>
+        {!isAndroidPhone ? (
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <p className="min-w-0 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-500">
+              {apiMode === "responses"
+                ? "Responses API"
+                : "Images API"}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      <div className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+      <div className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
             历史 <span className="font-mono-token text-zinc-500">({filtered.length}{filtered.length !== history.length && `/${history.length}`})</span>
           </h3>
-          <button
-            onClick={() => setField("currentImage", null)}
-            title="清空画板(不删历史)"
-            className="text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)]"
-          >
-            清空画板
-          </button>
+          {currentImage && (
+            <button
+              onClick={() => setField("currentImage", null)}
+              title="清空画板(不删历史)"
+              className="text-[10px] text-zinc-500 transition-colors hover:text-[var(--accent)]"
+            >
+              {isAndroidPhone ? "清空" : "清空画板"}
+            </button>
+          )}
         </div>
 
-        <input
-          placeholder="搜索 prompt..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className={`focus-ring mt-3 w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-xs text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
-        />
-        <div className="mt-2 flex gap-1.5">
-          <select
-            value={modeF}
-            onChange={(e) => setModeF(e.target.value as ModeFilter)}
-            className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
-          >
-            <option value="all">全部模式</option>
-            <option value="generate">文生图</option>
-            <option value="edit">图生图</option>
-          </select>
-          <select
-            value={dateF}
-            onChange={(e) => setDateF(e.target.value as DateFilter)}
-            className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
-          >
-            <option value="all">全部日期</option>
-            <option value="today">今天</option>
-            <option value="week">本周</option>
-          </select>
-        </div>
+        {showHistoryFilters && (
+          <>
+            <input
+              placeholder="搜索 prompt..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className={`focus-ring ${isAndroidPhone ? "mt-1.5" : "mt-3"} w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+            />
+            <div className={`mt-2 flex ${isAndroidPhone ? "gap-1" : "gap-1.5"}`}>
+              <select
+                value={modeF}
+                onChange={(e) => setModeF(e.target.value as ModeFilter)}
+                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2"} text-[10px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+              >
+                <option value="all">全部模式</option>
+                <option value="generate">文生图</option>
+                <option value="edit">图生图</option>
+              </select>
+              <select
+                value={dateF}
+                onChange={(e) => setDateF(e.target.value as DateFilter)}
+                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2"} text-[10px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+              >
+                <option value="all">全部日期</option>
+                <option value="today">今天</option>
+                <option value="week">本周</option>
+              </select>
+            </div>
+          </>
+        )}
 
-        <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">
-          点击查看 · Shift+点击对比 · 双击设源图 · 右键更多
-        </p>
+        {!isAndroidPhone && !isMac && (
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">
+            点击查看 · Shift+点击对比 · 双击设源图 · 右键更多
+          </p>
+        )}
       </div>
 
       {compareB && (
@@ -250,7 +254,7 @@ export function HistoryRail() {
       )}
 
       {filtered.length === 0 ? (
-        <div className={`platform-card border border-black/[0.05] bg-white/70 py-8 text-center text-xs text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+        <div className={`platform-card border border-black/[0.05] bg-white/70 text-center text-xs text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "py-4" : "py-8"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
           {q || modeF !== "all" || dateF !== "all" ? "没有匹配项" : "还没有结果"}
         </div>
       ) : (
@@ -273,12 +277,6 @@ export function HistoryRail() {
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={buildMenu(menu.h)} onClose={() => setMenu(null)} />}
       {rawPath && <RawResponseModal path={rawPath} onClose={() => setRawPath(null)} />}
-      {faqOpen && (
-        <Suspense fallback={null}>
-          <FAQModal open={faqOpen} onClose={() => setFaqOpen(false)} />
-        </Suspense>
-      )}
-
       {/* 防止 lucide import 未使用警告 */}
       <Clipboard className="hidden" /><Copy className="hidden" /><FileText className="hidden" />
       <Info className="hidden" /><ListRestart className="hidden" /><RotateCw className="hidden" /><Sparkles className="hidden" />
@@ -347,7 +345,7 @@ function HistoryTile({
         className="h-full w-full object-cover"
       />
       <span className={`absolute left-1.5 top-1.5 bg-black/55 px-1.5 py-0.5 text-[9px] text-white backdrop-blur-sm ${isWindows ? "rounded-[6px]" : "rounded-full"}`}>
-        {item.mode === "edit" ? "Edit" : "Generate"}
+        {item.mode === "edit" ? "图生图" : "文生图"}
       </span>
       {isCompare && (
         <span className={`absolute right-1.5 top-1.5 bg-blue-500 px-1.5 py-0.5 text-[9px] text-white ${isWindows ? "rounded-[6px]" : "rounded-full"}`}>B</span>

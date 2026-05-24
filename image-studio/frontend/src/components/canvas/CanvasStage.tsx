@@ -98,9 +98,16 @@ export function CanvasStage() {
       if (w > 0 && h > 0) setHostSize({ w, h });
     };
     update();
-    const ro = new ResizeObserver(update);
-    ro.observe(node);
-    roRef.current = ro;
+    if (typeof ResizeObserver === "function") {
+      const ro = new ResizeObserver(update);
+      ro.observe(node);
+      roRef.current = ro;
+      return;
+    }
+    window.addEventListener("resize", update);
+    roRef.current = {
+      disconnect: () => window.removeEventListener("resize", update),
+    } as ResizeObserver;
   }, []);
 
   // Plain function — not useMemo — so it is always computed with the very

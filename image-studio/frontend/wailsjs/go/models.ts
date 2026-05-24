@@ -1,5 +1,5 @@
 export namespace backend {
-	
+
 	export class GenerateOptions {
 	    apiKey: string;
 	    mode: string;
@@ -19,11 +19,11 @@ export namespace backend {
 	    apiMode: string;
 	    noPromptRevision: boolean;
 	    concurrencyLimit: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new GenerateOptions(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
@@ -48,11 +48,11 @@ export namespace backend {
 	}
 	export class ImageTransformResult {
 	    path: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ImageTransformResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -61,11 +61,11 @@ export namespace backend {
 	export class ImportedImage {
 	    path: string;
 	    imageB64: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ImportedImage(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -74,11 +74,11 @@ export namespace backend {
 	}
 	export class JobStarted {
 	    jobId: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new JobStarted(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.jobId = source["jobId"];
@@ -96,6 +96,7 @@ export namespace backend {
 	    static createFrom(source: any = {}) {
 	        return new PromptOptimizeOptions(source);
 	    }
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
@@ -110,15 +111,18 @@ export namespace backend {
 	export class SelectFileResponse {
 	    path: string;
 	    size: number;
-	
+	    imageB64?: string;
+
 	    static createFrom(source: any = {}) {
 	        return new SelectFileResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
 	        this.size = source["size"];
+	        this.imageB64 = source["imageB64"];
 	    }
 	}
+
 }

@@ -5,8 +5,6 @@ import {
   WindowSetDarkTheme,
   WindowSetLightTheme,
   WindowSetSystemDefaultTheme,
-} from "../../wailsjs/runtime/runtime";
-import {
   Generate as wailsGenerate,
   Edit as wailsEdit,
   OptimizePrompt as wailsOptimizePrompt,
@@ -26,11 +24,14 @@ import {
   ImportHistoryFromFile,
   RegisterTrustedOutputDir,
   SetOutputDir,
-} from "../../wailsjs/go/backend/Service";
+  probeCurrentUpstream,
+  setKernelRuntimeMode,
+} from "../lib/runtimeHost";
 import type { backend } from "../../wailsjs/go/models";
 import {
   APIMode,
   HistoryItem,
+  KernelRuntimeMode,
   Mode,
   OutputFormatValue,
   Preset,
@@ -77,7 +78,7 @@ import {
   tryParseProfile,
 } from "../lib/profiles";
 import { base64ToBlob, blobToBase64, createPreviewBlob, getImageDimensionsFromBase64 } from "../lib/images";
-import { isWindows } from "../lib/platform";
+import { isMac, isWindows } from "../lib/platform";
 import { exportHistoryForPlatform, saveImageForPlatform } from "../lib/androidBridge";
 import {
   activeRuntimePatch,
@@ -245,6 +246,7 @@ interface StudioState {
   outputFormat: OutputFormatValue;
   seed: number;          // 0 = random
   transport: TransportKind;
+  kernelRuntimeMode: KernelRuntimeMode;
 
   // 顶层「当前生效」上游字段 —— 它们都是 active profile 的实时镜像,只读。
   // 改这些字段必须走 updateProfile / setActiveProfile,不能用 setField。
@@ -598,6 +600,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   outputFormat: "png",
   seed: 0,
   transport: "auto",
+  kernelRuntimeMode: "auto",
   baseURL: "",
   textModelID: "",
   imageModelID: "",
@@ -655,7 +658,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   upstreamModalOpen: false,
   openUpstreamConfig: () => set({ upstreamModalOpen: true }),
   closeUpstreamConfig: () => set({ upstreamModalOpen: false }),
-  openStarPrompt: () => set({ starPromptOpen: true, starPromptSource: "manual" }),
+  openStarPrompt: () => {
+    if (isMac) return;
+    set({ starPromptOpen: true, starPromptSource: "manual" });
+  },
   dismissStarPrompt: () => {
     set({ starPromptOpen: false });
     try { localStorage.setItem("gptcodex.starPrompted", "1"); } catch {}
@@ -706,6 +712,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
     if (key === "transport") {
       try { localStorage.setItem("gptcodex.transport", String(value)); } catch {}
+    } else if (key === "kernelRuntimeMode") {
+      try { localStorage.setItem("gptcodex.kernelRuntimeMode", String(value)); } catch {}
+      setKernelRuntimeMode(value as KernelRuntimeMode);
     } else if (key === "noPromptRevision") {
       try { localStorage.setItem("gptcodex.noPromptRevision", value ? "1" : "0"); } catch {}
     } else if (key === "outputFormat") {
@@ -885,8 +894,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         set({ mode: "edit", errorMessage: null, errorRawPath: null });
         return;
       }
+      const imageB64 = res.imageB64 ?? "";
+      const imageBlob = imageB64 ? base64ToBlob(imageB64) : null;
       set({
-        sources: [...existing, { path: res.path, name: baseName, size: res.size }],
+        sources: [...existing, { path: res.path, name: baseName, size: res.size, imageB64, imageBlob }],
         mode: "edit",
         errorMessage: null,
         errorRawPath: null,
@@ -1109,7 +1120,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       resultGridOpen: false,
       sources: alreadyIn
         ? existing
-        : [...existing, { path: localItem.savedPath, name: baseName, size: 0 }],
+        : [...existing, {
+            path: localItem.savedPath,
+            name: baseName,
+            size: 0,
+            imageBlob: localItem.imageBlob ?? null,
+            imageB64: localItem.imageB64,
+          }],
     });
   },
 
@@ -1174,6 +1191,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const v = localStorage.getItem("gptcodex.transport");
       if (v === "auto" || v === "native" || v === "curl") transport = v;
+    } catch {}
+    let kernelRuntimeMode: KernelRuntimeMode = "auto";
+    try {
+      const v = localStorage.getItem("gptcodex.kernelRuntimeMode");
+      if (v === "auto" || v === "local" || v === "remote") kernelRuntimeMode = v;
     } catch {}
     let noPromptRevision = false;
     try {
@@ -1285,6 +1307,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     // Apply theme + font scale to root immediately.
     applyTheme(theme);
     document.documentElement.style.setProperty("--font-scale", String(fontScale));
+    setKernelRuntimeMode(kernelRuntimeMode);
     // 用户自定义输出目录 —— 推给 backend,并记为可信输出根。
     const trustedRoots = new Set(loadTrustedOutputRoots());
     try {
@@ -1326,7 +1349,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     };
     set({
       apiKey: activeKey, history: trimHistory(items), promptHistory, presets, theme, fontScale,
-      apiMode, baseURL, textModelID, imageModelID, transport, noPromptRevision,
+      apiMode, baseURL, textModelID, imageModelID, transport, kernelRuntimeMode, noPromptRevision,
       outputFormat,
       profiles,
       activeProfileId,
@@ -1648,7 +1671,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return;
     }
     if (!s.baseURL.trim()) {
-      s.pushToast("先在右侧工作栏顶部的「上游配置」中填入中转站地址", "warn", 5000);
+      s.pushToast("先在「上游配置」里填入中转站地址", "warn", 5000);
       return;
     }
     const cleanedBaseURL = cleanBaseURL(s.baseURL);
@@ -1661,31 +1684,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({ isTestingKey: true });
     s.pushToast("正在测试连接...", "info", 8000);
     try {
-      // Fire-and-forget tiny generation; success = key works.
-      const r = await wailsGenerate({
-        apiKey: s.apiKey,
-        mode: "generate",
-        prompt: "a red dot",
-        size: "1024x1024",
-        quality: "low",
-        outputFormat: "png",
-        imagePaths: [],
-        imagePath: "",
-        maskB64: "",
-        seed: 0,
-        negativePrompt: "",
-        baseURL: cleanedBaseURL,
-        textModelID: s.textModelID,
-        imageModelID: s.imageModelID,
-        transport: s.transport,
-        apiMode: s.apiMode,
-        noPromptRevision: s.noPromptRevision,
-      } as any);
-      // We don't actually wait for the image; the job is queued in backend.
-      // Cancel right after to avoid burning quota.
-      setTimeout(() => { wailsCancel(r.jobId).catch(() => undefined); }, 800);
+      await probeCurrentUpstream(cleanedBaseURL, s.apiKey.trim());
       set({ isTestingKey: false });
-      s.pushToast("连接 OK · 上游接受了请求(已取消)", "success");
+      s.pushToast("连接 OK · 上游 models 列表可访问", "success");
     } catch (e: any) {
       set({ isTestingKey: false });
       s.pushToast(`连接失败:${e?.message ?? e}`, "error", 6000);
@@ -2004,7 +2005,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         mode: "edit",
         sources: alreadyIn
           ? existingSources
-          : [...existingSources, { path: result.path, name: file.name, size: file.size, imageB64: b64 }],
+          : [...existingSources, {
+              path: result.path,
+              name: file.name,
+              size: file.size,
+              imageBlob: fullBlob,
+              imageB64: b64,
+            }],
         errorMessage: null,
         errorRawPath: null,
       });
@@ -2065,7 +2072,11 @@ async function loadTransformedAsCurrent(path: string) {
 }
 
 async function materializeHistoryItem(item: HistoryItem): Promise<HistoryItem> {
-  if (item.savedPath) return item;
+  if (item.savedPath) {
+    if (!item.savedPath.startsWith("memory://")) return item;
+    const readable = await ReadImageAsBase64(item.savedPath).then(() => true).catch(() => false);
+    if (readable) return item;
+  }
   const imported = await ImportImageFromB64(item.imageB64, suggestedImportNameForHistory(item));
   const next: HistoryItem = { ...item, savedPath: imported.path };
   const state = useStudioStore.getState();
@@ -2079,9 +2090,11 @@ async function materializeHistoryItem(item: HistoryItem): Promise<HistoryItem> {
 
 async function ensureFullHistoryItem(item: HistoryItem | null): Promise<HistoryItem | null> {
   if (!item) return null;
-  if (!item.savedPath || !item.previewOnly) return item;
+  if (!item.previewOnly) return item;
   try {
-    let fullB64 = await ReadImageAsBase64(item.savedPath).catch(() => "");
+    let fullB64 = item.savedPath
+      ? await ReadImageAsBase64(item.savedPath).catch(() => "")
+      : "";
     if (!fullB64) {
       fullB64 = await loadHistoryFullImage(item.id).catch(() => "");
     }
@@ -2288,14 +2301,19 @@ async function launchOneJob(
         // 写入就再也不弹(无论用户点 star 还是关闭)。延迟是为了让用户先看
         // 到图,然后再被礼貌打扰。
         try {
-          if (localStorage.getItem("gptcodex.starPrompted") !== "1"
+          if (!isMac
+              && localStorage.getItem("gptcodex.starPrompted") !== "1"
               && !store.getState().starPromptOpen) {
             setTimeout(() => {
-              // 二次检查:期间可能用户用别的渠道关掉过弹窗
-              if (localStorage.getItem("gptcodex.starPrompted") !== "1") {
+              const snapshot = store.getState();
+              const overlayBusy =
+                snapshot.upstreamModalOpen ||
+                snapshot.resultDetail !== null ||
+                document.querySelector('[role="dialog"]') !== null;
+              if (!overlayBusy && localStorage.getItem("gptcodex.starPrompted") !== "1") {
                 store.setState({ starPromptOpen: true, starPromptSource: "auto" });
               }
-            }, 2000);
+            }, 3500);
           }
         } catch { /* localStorage 不可用 → 静默跳过 */ }
         removeFromRunning();

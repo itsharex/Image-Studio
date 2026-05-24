@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+
 val frontendRoot = file("../../image-studio/frontend")
 val npmCacheDir = rootProject.file("../.tmp/android-npm-cache")
 val androidHomeDir = rootProject.file("../.tmp/android-home")
@@ -58,6 +62,11 @@ val frontendInstallTask = tasks.register("prepareFrontendDependencies") {
             commandLine("npm", "ci")
         }
     }
+}
+
+abstract class SyncFrontendAssetsTask : DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
 }
 
 android {
@@ -158,11 +167,19 @@ androidComponents {
         val frontendDist = frontendRoot.resolve("dist")
         val sharedAssetsDir = layout.projectDirectory.dir("src/main/assets/web")
         val assetsDir = layout.projectDirectory.dir("src/$flavorName/assets/web")
+        val generatedAssetsDir = layout.buildDirectory.dir("generated/frontendAssets/${variant.name}/web")
         val variantCapName = variant.name.replaceFirstChar { it.uppercaseChar() }
 
-        val syncTask = tasks.register(frontendTaskName) {
+        val syncTask = tasks.register<SyncFrontendAssetsTask>(frontendTaskName) {
             group = "frontend"
             dependsOn(frontendInstallTask)
+            outputDir.set(generatedAssetsDir)
+            inputs.dir(frontendRoot.resolve("src"))
+            inputs.file(frontendRoot.resolve("package.json"))
+            inputs.file(frontendRoot.resolve("package-lock.json"))
+            inputs.file(frontendRoot.resolve("vite.config.ts"))
+            inputs.file(frontendRoot.resolve("scripts/platform-vite.mjs"))
+            outputs.upToDateWhen { false }
             doLast {
                 androidHomeCacheDir.mkdirs()
                 exec {
@@ -174,18 +191,21 @@ androidComponents {
                 }
                 delete(sharedAssetsDir)
                 delete(assetsDir)
+                delete(outputDir)
                 copy {
                     from(frontendDist)
-                    into(assetsDir)
+                    into(outputDir)
                 }
             }
         }
 
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            syncTask,
+            SyncFrontendAssetsTask::outputDir,
+        )
+
         afterEvaluate {
             listOf(
-                "merge${variantCapName}Assets",
-                "generate${variantCapName}Assets",
-                "package${variantCapName}Assets",
                 "validateSigning${variantCapName}",
             ).forEach { taskName ->
                 tasks.findByName(taskName)?.dependsOn(syncTask)

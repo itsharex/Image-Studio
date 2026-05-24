@@ -65,8 +65,8 @@ jobs:
             goos: darwin
             artifact_name: image-studio-macos-universal.zip
             artifact_path: dist/image-studio-macos-universal.zip
-            wails_args: -clean
-            package_cmd: ditto -c -k --sequesterRsrc --keepParent image-studio/build/bin/image-studio.app dist/image-studio-macos-universal.zip
+            wails_args: ""
+            package_cmd: ditto -c -k --sequesterRsrc --keepParent "image-studio/build/bin/Image Studio.app" dist/image-studio-macos-universal.zip
           - id: linux-amd64
             runner: ubuntu-24.04
             goos: linux
@@ -106,6 +106,7 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
       - name: Install Wails CLI
+        if: matrix.goos != 'darwin'
         shell: bash
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -117,8 +118,12 @@ jobs:
         env:
           VITE_APP_VERSION: ${{ needs.prepare-version.outputs.app_version }}
         run: |
-          wails build ${{ matrix.wails_args }} \
-            -ldflags "-X github.com/yuanhua/image-gptcodex/pkg/client.Version=${{ needs.prepare-version.outputs.app_version }}"
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            bash ../scripts/package-local-macos-app.sh
+          else
+            wails build ${{ matrix.wails_args }} \
+              -ldflags "-X github.com/yuanhua/image-gptcodex/pkg/client.Version=${{ needs.prepare-version.outputs.app_version }}"
+          fi
 
       - name: Stage packaged artifact
         shell: bash

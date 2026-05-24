@@ -1,7 +1,7 @@
 import { Folder, Github, MessageSquare } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { OpenExternalURL, OpenOutputDir } from "../../../wailsjs/go/backend/Service";
-import { isAndroid, isWindows, usesAppleUI } from "../../lib/platform";
+import { OpenExternalURL, OpenOutputDir } from "../../lib/runtimeHost";
+import { isAndroid, isMac, isWindows, usesAppleUI } from "../../lib/platform";
 import { androidTarget, openExternalURLForPlatform, openOutputLocationForPlatform } from "../../lib/androidBridge";
 import { appVersion } from "../../lib/version";
 
@@ -12,6 +12,7 @@ export function FooterBar() {
   const { fullscreen, history, runningJobs, isRunning, workspaces, pushToast } = useStudioStore();
   if (fullscreen) return null;
   if (isAndroid) return null;
+  if (isMac) return null;
   const totalRunning = workspaces.reduce((sum, w) => sum + (w.runningJobIds?.length ?? 0), 0);
   const activeRunning = isRunning;
   const anyRunning = activeRunning || totalRunning > 0;
@@ -35,12 +36,16 @@ export function FooterBar() {
         <FooterBtn onClick={openOutputLocation}>
           <Folder className="h-3 w-3" /> {androidTarget.isAndroid ? "保存位置" : "输出目录"}
         </FooterBtn>
-        <FooterBtn onClick={() => open(REPO_URL)}>
-          <Github className="h-3 w-3" /> GitHub
-        </FooterBtn>
-        <FooterBtn onClick={() => open(ISSUES_URL)}>
-          <MessageSquare className="h-3 w-3" /> 反馈
-        </FooterBtn>
+        {!isMac && (
+          <>
+            <FooterBtn onClick={() => open(REPO_URL)}>
+              <Github className="h-3 w-3" /> GitHub
+            </FooterBtn>
+            <FooterBtn onClick={() => open(ISSUES_URL)}>
+              <MessageSquare className="h-3 w-3" /> 反馈
+            </FooterBtn>
+          </>
+        )}
       </div>
       <div className="flex items-center gap-3">
         <span className="flex items-baseline gap-1">

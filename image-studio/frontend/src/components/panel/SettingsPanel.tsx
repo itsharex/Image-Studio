@@ -6,8 +6,8 @@ import {
 import { useStudioStore } from "../../state/studioStore";
 import {
   GetOutputDir, OpenOutputDir, OpenExternalURL, ChooseOutputDir, SetOutputDir,
-} from "../../../wailsjs/go/backend/Service";
-import type { TransportKind } from "../../types/domain";
+} from "../../lib/runtimeHost";
+import type { KernelRuntimeMode, TransportKind } from "../../types/domain";
 import { Modal } from "../common/Modal";
 import { rememberTrustedOutputRoot } from "../../lib/storage";
 import { isWindows, platformOutputRootLabel, platformRuntimeLabel, undoShortcutLabel } from "../../lib/platform";
@@ -15,6 +15,7 @@ import { androidSaveHint, androidTarget, openExternalURLForPlatform, openOutputL
 import { appVersion } from "../../lib/version";
 
 const REPO_URL = "https://github.com/RoseKhlifa/Image-Studio";
+const ISSUES_URL = "https://github.com/RoseKhlifa/Image-Studio/issues";
 const MIT_URL = "https://opensource.org/licenses/MIT";
 
 function PresetsRow() {
@@ -56,6 +57,7 @@ function PresetsRow() {
 export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const {
     transport,
+    kernelRuntimeMode,
     theme, fontScale,
     setField, setAPIKey,
     history,
@@ -105,27 +107,42 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <>
       <Modal open={open} onClose={closeSettings} title="设置" width={540}>
-        <div className="flex flex-col gap-3.5">
+        <div className={`flex flex-col ${androidTarget.isAndroid ? "gap-3" : "gap-3.5"}`}>
           {/* 网络通道 */}
           <Row label="网络通道">
             <select
               value={transport}
               onChange={(e) => setField("transport", e.target.value as TransportKind)}
-              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-xs text-zinc-900 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-900 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
             >
               <option value="auto">auto(原生 HTTP)</option>
               <option value="native">native(强制原生)</option>
               <option value="curl">curl(子进程兜底)</option>
             </select>
-            <p className="text-[10px] text-zinc-500 mt-1">
+            <p className="text-[10px] text-zinc-500 mt-0.5">
               如果遇到网络问题(Cloudflare TLS / 公司代理),试 curl
+            </p>
+          </Row>
+
+          <Row label="内核执行">
+            <select
+              value={kernelRuntimeMode}
+              onChange={(e) => setField("kernelRuntimeMode", e.target.value as KernelRuntimeMode)}
+              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-900 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+            >
+              <option value="auto">auto(按宿主自动选择)</option>
+              <option value="local">local(桌面 Go/Wails)</option>
+              <option value="remote">remote(共享远程内核)</option>
+            </select>
+            <p className="text-[10px] text-zinc-500 mt-0.5">
+              桌面可切到 remote 验证与 Android / Worker 是否走同一套共享请求内核
             </p>
           </Row>
 
           {/* 输出目录 */}
           <Row label={androidTarget.isAndroid ? "保存位置" : "输出目录"}>
             <div className={`flex items-center gap-1 border border-black/[0.08] bg-[var(--surface)] px-3 py-2 dark:border-white/[0.08] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
-              <span title={outputDir} className="flex-1 text-[11px] font-mono-token text-zinc-700 dark:text-zinc-300 truncate">
+              <span title={outputDir} className="flex-1 text-[10px] font-mono-token text-zinc-700 dark:text-zinc-300 truncate">
                 {androidTarget.isAndroid ? platformOutputRootLabel() : (outputDir || "...")}
               </span>
               <button
@@ -137,7 +154,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
               </button>
             </div>
             {androidTarget.isAndroid ? (
-              <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">{androidSaveHint()}</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-zinc-500">{androidSaveHint()}</p>
             ) : (
               <div className="flex gap-1.5 mt-1.5">
                 <button
@@ -252,16 +269,30 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             <Info className="w-3 h-3" /> 关于 Image Studio
           </button>
 
-          <p className="text-[10px] text-zinc-500 leading-relaxed">
-            {`快捷键:1/2/3 切工具 · 空格临时拖动 · F 重置视图 · [ ] 调笔刷 · ${undoShortcutLabel} 撤销 · Esc 取消/退出对比 · Shift+点击历史 进入对比`}
-          </p>
+          <Row label="支持与反馈">
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => openExternal(REPO_URL)}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              >
+                <Github className="w-3 h-3" /> GitHub
+              </button>
+              <button
+                onClick={() => openExternal(ISSUES_URL)}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              >
+                <MessageSquare className="w-3 h-3" /> 反馈
+              </button>
+            </div>
+          </Row>
+
         </div>
       </Modal>
 
       {/* 关于 modal */}
       <Modal open={aboutOpen} onClose={() => setAboutOpen(false)} title="关于 Image Studio" width={460}>
-        <div className="text-center mb-5">
-          <div className={`w-14 h-14 mx-auto mb-2 bg-white dark:bg-zinc-100 ring-1 ring-black/15 dark:ring-white/20 flex items-center justify-center ${isWindows ? "rounded-[12px]" : "rounded-2xl"}`}>
+        <div className={`text-center ${androidTarget.isAndroid ? "mb-4" : "mb-5"}`}>
+          <div className={`w-14 h-14 mx-auto ${androidTarget.isAndroid ? "mb-1.5" : "mb-2"} bg-white dark:bg-zinc-100 ring-1 ring-black/15 dark:ring-white/20 flex items-center justify-center ${isWindows ? "rounded-[12px]" : "rounded-2xl"}`}>
             <svg width="40" height="40" viewBox="0 0 1024 1024" fill="none" aria-hidden>
               <rect x="160" y="270" width="704" height="490" rx="56" stroke="#18181b" strokeWidth="56" />
               <path d="M 200 740 L 420 470 L 560 600 L 460 740 Z" fill="#52525b" />
@@ -271,25 +302,41 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
               <polygon points="780,240 820,224 860,240 820,256" fill="#18181b" />
             </svg>
           </div>
-          <div className="text-lg font-bold">Image Studio</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">
+          <div className={`${androidTarget.isAndroid ? "text-[17px]" : "text-lg"} font-bold`}>Image Studio</div>
+          <div className="text-[10px] text-zinc-500 mt-0.5">
             v{appVersion} · <span onClick={() => openExternal(MIT_URL)} className="cursor-pointer text-[var(--accent)] hover:opacity-80">MIT License</span>
           </div>
         </div>
-        <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-          一个开源的图片生成 / 编辑桌面客户端,基于 Wails(Go + React/TS)。
-          所有数据(API Key、历史记录、生成图)都保存在本地机器,不上传任何服务器。API Key 走系统安全存储,不再保存在 localStorage。
-        </p>
-        <div className="mt-3.5 text-xs text-zinc-500 leading-relaxed space-y-0.5">
-          <div><strong className="text-zinc-700 dark:text-zinc-300">技术栈:</strong></div>
-          <div>· 后端:Go ≥ 1.25 / net/http SSE / pkg/client</div>
-          <div>· 前端:React 18 + TypeScript / Tailwind v4 / zustand / react-konva</div>
-          <div>· 打包:{platformRuntimeLabel()}</div>
-          <div className="pt-1.5"><strong className="text-zinc-700 dark:text-zinc-300">支持的上游:</strong></div>
-          <div>· 任何兼容 OpenAI <strong className="text-zinc-700 dark:text-zinc-300">Responses API</strong> 形态的中转站</div>
-          <div>· 标准 <strong className="text-zinc-700 dark:text-zinc-300">Images API</strong>(generations + edits)</div>
-        </div>
-        <div className="mt-4 flex gap-2">
+        {androidTarget.isAndroid ? (
+          <>
+            <p className="text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300">
+              开源的图片生成 / 编辑客户端。数据都保存在本地机器，不上传任何服务器，API Key 走系统安全存储。
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+              <AboutFact label="数据" value="本地保存" />
+              <AboutFact label="运行时" value="Android WebView" />
+              <AboutFact label="上游" value="Responses / Images" />
+              <AboutFact label="协议" value="MIT License" />
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+              一个开源的图片生成 / 编辑客户端,基于 Wails(Go + React/TS)。
+              数据(API Key、历史记录、生成图)都保存在本地机器,不上传任何服务器。API Key 走系统安全存储,不再保存在 localStorage。
+            </p>
+            <div className="mt-3 text-[10px] text-zinc-500 leading-relaxed space-y-0.5">
+              <div><strong className="text-zinc-700 dark:text-zinc-300">技术栈:</strong></div>
+              <div>· 后端:Go ≥ 1.25 / SSE</div>
+              <div>· 前端:React 18 + TypeScript / Tailwind v4 / zustand / react-konva</div>
+              <div>· 打包:{platformRuntimeLabel()}</div>
+              <div className="pt-1.5"><strong className="text-zinc-700 dark:text-zinc-300">支持的上游:</strong></div>
+              <div>· 兼容 OpenAI <strong className="text-zinc-700 dark:text-zinc-300">Responses API</strong></div>
+              <div>· 标准 <strong className="text-zinc-700 dark:text-zinc-300">Images API</strong>(generations + edits)</div>
+            </div>
+          </>
+        )}
+        <div className="mt-3.5 flex gap-2">
           <button
             onClick={() => openExternal(REPO_URL)}
             className={`liquid-primary-button flex-1 inline-flex items-center justify-center gap-1.5 bg-[var(--accent)] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
@@ -303,10 +350,9 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             <MessageSquare className="w-3.5 h-3.5" /> 反馈
           </button>
         </div>
-        <hr className="border-black/[0.06] dark:border-white/[0.04] mt-4 mb-3" />
-        <div className="text-[10px] text-zinc-500 text-center leading-relaxed">
-          100% 本地数据 · 无遥测 · 无云端账户 · 无内购<br />
-          Copyright © 2026 · Released under MIT
+        <hr className="border-black/[0.06] dark:border-white/[0.04] mt-3.5 mb-2.5" />
+        <div className="text-[9px] text-zinc-500 text-center leading-relaxed">
+          100% 本地数据 · 无遥测 · 无云端账户 · 无内购
         </div>
       </Modal>
     </>
@@ -316,7 +362,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
 function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{label}</label>
+      <label className="mb-1 block text-[10px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{label}</label>
       {children}
     </div>
   );
@@ -330,7 +376,7 @@ function SegBtn({ active, onClick, children }: {
   return (
     <button
       onClick={onClick}
-      className={`platform-chip flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${
+      className={`platform-chip flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium transition-colors ${
         active
           ? "active bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
           : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -338,5 +384,14 @@ function SegBtn({ active, onClick, children }: {
     >
       {children}
     </button>
+  );
+}
+
+function AboutFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[14px] border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-left dark:border-white/[0.08]">
+      <div className="text-[9px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{label}</div>
+      <div className="mt-1 text-[11px] font-medium text-zinc-800 dark:text-zinc-100">{value}</div>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Modal } from "../common/Modal";
-import { OpenExternalURL } from "../../../wailsjs/go/backend/Service";
+import { OpenExternalURL } from "../../lib/runtimeHost";
 import { openExternalURLForPlatform } from "../../lib/androidBridge";
 import {
   closeTabShortcutLabel,

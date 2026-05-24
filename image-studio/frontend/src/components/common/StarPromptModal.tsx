@@ -1,6 +1,6 @@
 import { Github, Heart, Sparkles, Star } from "lucide-react";
 import { Modal } from "./Modal";
-import { OpenExternalURL } from "../../../wailsjs/go/backend/Service";
+import { OpenExternalURL } from "../../lib/runtimeHost";
 import { isWindows, usesAppleUI } from "../../lib/platform";
 import { useStudioStore } from "../../state/studioStore";
 

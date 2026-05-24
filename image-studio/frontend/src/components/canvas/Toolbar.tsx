@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import { ANNOTATION_COLORS } from "../../types/domain";
-import { fullscreenShortcutLabel, isAndroidPhone, isWindows, redoShortcutLabel, undoShortcutLabel, usesAppleUI } from "../../lib/platform";
+import { fullscreenShortcutLabel, isAndroidPhone, isMac, isWindows, redoShortcutLabel, undoShortcutLabel, usesAppleUI } from "../../lib/platform";
 
 export function Toolbar() {
   const {
@@ -22,29 +22,35 @@ export function Toolbar() {
   } = useStudioStore();
   const selRect = annotations.find((a) => a.id === selectedAnnotationId && a.kind === "rect");
   const hasImage = !!currentImage;
+  const showBatchGridToggle = batchResults.length > 1;
+  if (isMac && !hasImage && !showBatchGridToggle) return null;
 
   return (
     <div className={`canvas-toolbar flex items-center gap-1.5 overflow-x-auto border-b border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 backdrop-blur-2xl ${usesAppleUI ? "liquid-glass-bar" : ""}`}>
-      <ToolBtn active={tool === "pan"} disabled={!hasImage} onClick={() => setField("tool", "pan")} title="拖动 / 缩放 (1)">
-        <Hand className="w-3.5 h-3.5" />
-      </ToolBtn>
-      <ToolBtn active={tool === "mask"} disabled={!hasImage} onClick={() => setField("tool", "mask")} title="蒙版画笔 (2)">
-        <Brush className="w-3.5 h-3.5" />
-      </ToolBtn>
-      <ToolBtn active={tool === "annotate"} disabled={!hasImage} onClick={() => setField("tool", "annotate")} title="画框标注 (3)">
-        <Square className="w-3.5 h-3.5" />
-      </ToolBtn>
+      {hasImage ? (
+        <>
+          <ToolBtn active={tool === "pan"} disabled={!hasImage} onClick={() => setField("tool", "pan")} title="拖动 / 缩放 (1)">
+            <Hand className="w-3.5 h-3.5" />
+          </ToolBtn>
+          <ToolBtn active={tool === "mask"} disabled={!hasImage} onClick={() => setField("tool", "mask")} title="蒙版画笔 (2)">
+            <Brush className="w-3.5 h-3.5" />
+          </ToolBtn>
+          <ToolBtn active={tool === "annotate"} disabled={!hasImage} onClick={() => setField("tool", "annotate")} title="画框标注 (3)">
+            <Square className="w-3.5 h-3.5" />
+          </ToolBtn>
 
-      <Sep />
+          <Sep />
 
-      <ToolBtn disabled={undoStack.length === 0} onClick={undo} title={`撤销 (${undoShortcutLabel})`}>
-        <RotateCcw className="w-3.5 h-3.5" />
-      </ToolBtn>
-      <ToolBtn disabled={redoStack.length === 0} onClick={redo} title={`重做 (${redoShortcutLabel})`}>
-        <RotateCw className="w-3.5 h-3.5" />
-      </ToolBtn>
+          <ToolBtn disabled={undoStack.length === 0} onClick={undo} title={`撤销 (${undoShortcutLabel})`}>
+            <RotateCcw className="w-3.5 h-3.5" />
+          </ToolBtn>
+          <ToolBtn disabled={redoStack.length === 0} onClick={redo} title={`重做 (${redoShortcutLabel})`}>
+            <RotateCw className="w-3.5 h-3.5" />
+          </ToolBtn>
 
-      <Sep />
+          <Sep />
+        </>
+      ) : null}
 
       {tool === "mask" && (
         <>
@@ -146,7 +152,7 @@ export function Toolbar() {
       )}
 
       <div className="ml-auto flex items-center gap-1">
-        {batchResults.length > 1 && (
+        {showBatchGridToggle && (
           <button
             onClick={resultGridOpen ? closeResultGrid : openResultGrid}
             title={resultGridOpen ? "返回当前图" : "查看本批多图网格"}
@@ -156,7 +162,7 @@ export function Toolbar() {
                 : "text-zinc-600 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] dark:text-zinc-400"
             } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
           >
-            {resultGridOpen ? "单图" : `网格 ${batchResults.length}`}
+            {isAndroidPhone ? (resultGridOpen ? "单图" : `网格 ${batchResults.length}`) : (resultGridOpen ? "单图" : `网格 ${batchResults.length}`)}
           </button>
         )}
         {currentImage && !isAndroidPhone && (
@@ -173,13 +179,19 @@ export function Toolbar() {
             <ToolBtn onClick={() => setField("currentImage", null)} title="清空画布(不删除历史)">
               <Trash2 className="w-3.5 h-3.5" />
             </ToolBtn>
-            <button
-              onClick={saveCurrentImageAs}
-              title="另存为"
-              className={`liquid-primary-button inline-flex items-center gap-1 bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
-            >
-              <Save className="w-3.5 h-3.5" /> 另存为
-            </button>
+            {!isAndroidPhone ? (
+              <button
+                onClick={saveCurrentImageAs}
+                title="另存为"
+                className={`liquid-primary-button inline-flex items-center gap-1 bg-[var(--accent)] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              >
+                <Save className="w-3.5 h-3.5" /> 另存为
+              </button>
+            ) : (
+              <ToolBtn onClick={saveCurrentImageAs} title="另存为">
+                <Save className="w-3.5 h-3.5" />
+              </ToolBtn>
+            )}
           </>
         )}
       </div>

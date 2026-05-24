@@ -31,6 +31,7 @@ export interface UpstreamProfile {
 export type SizeValue = "auto" | "1024x1024" | "1536x1024" | "1024x1536" | "2048x1152" | "1152x2048";
 export type QualityValue = "auto" | "high" | "medium" | "low";
 export type TransportKind = "auto" | "native" | "curl";
+export type KernelRuntimeMode = "auto" | "local" | "remote";
 // 让上游做编码;落盘扩展名 jpeg → .jpg,其他原样。
 export type OutputFormatValue = "png" | "jpeg" | "webp";
 export type ThemeMode = "system" | "light" | "dark";
@@ -67,8 +68,9 @@ export interface SourceImage {
   name: string;
   size: number;       // bytes; 0 when unknown (e.g. reused-from-history)
   imageBlob?: Blob | null;
-  // Optional base64 for canvas preview, only kept when freshly imported.
-  // Items added via OpenImageDialog don't carry b64 to keep memory bounded.
+  // Optional base64 for canvas preview. OpenImageDialog now returns it for
+  // reasonably sized files, while very large files still fall back to the
+  // extension placeholder UI to avoid blowing up the JSON bridge.
   imageB64?: string;
 }
 
@@ -148,6 +150,7 @@ export interface Preset {
   outputFormat?: OutputFormatValue;
   negativePrompt: string;
   transport: TransportKind;
+  kernelRuntimeMode?: KernelRuntimeMode;
   batchCount: number;
 }
 

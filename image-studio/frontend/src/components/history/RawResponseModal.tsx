@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Copy } from "lucide-react";
 import { Modal } from "../common/Modal";
-import { ReadTextFile } from "../../../wailsjs/go/backend/Service";
+import { ReadTextFile } from "../../lib/runtimeHost";
 import { useStudioStore } from "../../state/studioStore";
 import { isWindows } from "../../lib/platform";
 

@@ -1,11 +1,11 @@
 import { lazy, Suspense, useState } from "react";
 import {
-  Dices, FileText, ImagePlus, ListPlus, RotateCw, Sparkles, Trash2, X,
+  Dices, FileText, ImagePlus, ListPlus, RotateCw, Settings, Sparkles, Trash2, X,
 } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { OpenFile } from "../../../wailsjs/go/backend/Service";
+import { OpenFile } from "../../lib/runtimeHost";
 import { SizeValue, QualityValue, Mode, OutputFormatValue, OUTPUT_FORMAT_OPTIONS } from "../../types/domain";
-import { isAndroid, isWindows, submitShortcutLabel, usesAndroidUI, usesAppleUI } from "../../lib/platform";
+import { isAndroid, isAndroidPhone, isMac, isWindows, submitShortcutLabel, usesAndroidUI, usesAppleUI } from "../../lib/platform";
 
 const PromptPopover = lazy(() => import("./PromptPopover").then((m) => ({ default: m.PromptPopover })));
 
@@ -44,10 +44,13 @@ export function ControlPanel() {
     noPromptRevision,
     setField, clearError, pushToast,
     selectSourceImage, removeSource, clearSources,
+    openUpstreamConfig,
     submit, cancel, retryLast, optimizePrompt,
   } = useStudioStore();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [promptPopover, setPromptPopover] = useState(false);
+  const [mobileStyleOpen, setMobileStyleOpen] = useState(false);
+  const [macComposeOpen, setMacComposeOpen] = useState(false);
 
   const promptLen = prompt.length;
   // 优化按钮只要有任一可用的 Responses profile 或当前 active 已配置就启用。
@@ -59,29 +62,37 @@ export function ControlPanel() {
   const optimizeReady = !!(
     prompt.trim() && (hasUsableResponsesProfile || (apiKey.trim() && baseURL.trim()))
   );
+  const needsUpstreamSetup = !apiKey.trim() || !baseURL.trim();
+  const compactPhoneSetup = isAndroidPhone && needsUpstreamSetup;
+  const compactPhoneConfigured = isAndroidPhone && !needsUpstreamSetup;
+  const compactMacCompose = isMac;
 
   return (
-    <div className={`control-panel flex w-[336px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI ? "android-surface-pane" : ""} ${isWindows ? "pt-3" : ""}`}>
-      <section className="platform-card px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2
-              className={`text-zinc-900 dark:text-zinc-100 ${isWindows ? "text-[18px] font-semibold tracking-[0]" : "text-[20px] font-semibold tracking-[-0.02em]"}`}
-              style={{ fontFamily: "var(--title-font)" }}
-            >
-              图像工作台
-            </h2>
-            {!isAndroid && (
-              <p className="mt-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                保持界面简洁，把注意力留给 prompt、参考图和结果。
-              </p>
+    <div className={`control-panel flex w-[336px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI && !isAndroidPhone ? "android-surface-pane" : ""} ${isWindows ? "pt-3" : ""}`}>
+      {!compactPhoneSetup && !compactPhoneConfigured ? (
+        <section className="platform-card px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2
+                className={`text-zinc-900 dark:text-zinc-100 ${isAndroidPhone ? "text-[18px] font-semibold tracking-[0]" : isWindows ? "text-[18px] font-semibold tracking-[0]" : "text-[20px] font-semibold tracking-[-0.02em]"}`}
+                style={{ fontFamily: "var(--title-font)" }}
+              >
+                图像工作台
+              </h2>
+              {!isAndroid && (
+                <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  保持界面简洁，把注意力留给 prompt、参考图和结果。
+                </p>
+              )}
+            </div>
+            {!isAndroidPhone && !isMac && (
+              <div className={`platform-pill bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-2xl"}`}>
+                {mode === "edit" ? "图生图" : "文生图"}
+              </div>
             )}
           </div>
-          <div className={`platform-pill bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-2xl"}`}>
-            {mode === "edit" ? "Edit" : "Generate"}
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {errorMessage && (
         <div className={`border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-700 shadow-[var(--shadow-card)] dark:text-red-200 ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
@@ -124,7 +135,7 @@ export function ControlPanel() {
       )}
 
       {/* 模式 */}
-      <Section label="模式">
+      {!compactPhoneConfigured && !compactPhoneSetup && <Section label="模式">
         <Seg>
           {(["generate", "edit"] as Mode[]).map((m) => (
             <SegItem
@@ -136,38 +147,85 @@ export function ControlPanel() {
             </SegItem>
           ))}
         </Seg>
-      </Section>
+      </Section>}
+
+      {compactPhoneSetup && (
+        <section className={`platform-card border border-[color:var(--accent)]/18 bg-[var(--accent-soft)] ${isAndroidPhone ? "p-3.5" : "p-4"} shadow-[var(--shadow-card)] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+          <div className="flex items-start gap-3">
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center border border-[color:var(--accent)]/18 bg-white/70 dark:bg-white/[0.06] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+              <Settings className="h-3.5 w-3.5 text-[var(--accent)]" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">先连上可用上游</h3>
+              <p className="mt-0.5 text-[11px] leading-5 text-zinc-600 dark:text-zinc-300">
+                先保存中转站地址和 API Key，再测试连接。连通后，这里会自动展开完整参数页。
+              </p>
+              <div className="mt-2.5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={openUpstreamConfig}
+                  className={`liquid-primary-button inline-flex items-center gap-1.5 bg-[var(--accent)] px-3.5 py-2 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                >
+                  <Settings className="h-3 w-3" /> 配置上游
+                </button>
+                <button
+                  type="button"
+                  onClick={openUpstreamConfig}
+                  className={`platform-action-btn inline-flex items-center gap-1.5 border border-[color:var(--accent)]/20 bg-white/70 px-3 py-2 text-[11px] text-[var(--accent)] dark:bg-white/[0.05] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                >
+                  <Sparkles className="h-3 w-3" /> 新建配置
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Prompt */}
-      <section className="platform-card relative p-4">
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
-            {mode === "edit" ? "修改要求" : "Prompt 提示词"}
+      <section className={`platform-card relative ${isAndroidPhone ? "p-3" : "p-4"}`}>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[10px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
+            {mode === "edit" ? "修改要求" : compactPhoneConfigured ? "提示词" : "提示词"}
           </label>
           <span className="font-mono-token text-zinc-400 dark:text-zinc-600 tabular-nums">{promptLen}</span>
         </div>
+        {compactPhoneConfigured && (
+          <div className="mb-2">
+            <Seg>
+              {(["generate", "edit"] as Mode[]).map((m) => (
+                <SegItem
+                  key={m}
+                  active={mode === m}
+                  onClick={() => setField("mode", m)}
+                >
+                  {m === "generate" ? "文生图" : "图生图"}
+                </SegItem>
+              ))}
+            </Seg>
+          </div>
+        )}
         <textarea
           value={prompt}
           placeholder={mode === "edit"
             ? "描述如何修改源图(例如:把背景换成夜空,人物保持不变)..."
             : "描述你想要生成的画面内容,越详细越好..."}
           onChange={(e) => setField("prompt", e.target.value)}
-          className={`focus-ring w-full min-h-[124px] resize-y border border-black/[0.08] bg-[var(--surface)] px-3 py-3 text-[14px] leading-relaxed text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`focus-ring w-full resize-y border border-black/[0.08] bg-[var(--surface)] px-3 py-3 leading-relaxed text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${compactPhoneConfigured ? "min-h-[78px] text-[13px]" : "min-h-[124px] text-[14px]"} ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
         />
         <div className="flex items-center justify-between mt-1.5 gap-2">
           <button
             type="button"
             onClick={() => setPromptPopover((v) => !v)}
             title="prompt 模板与历史"
-            className={`platform-pill inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-zinc-500 transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            className={`platform-pill inline-flex items-center gap-1 px-2.5 py-1 text-[10px] text-zinc-500 transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
           >
-            <ListPlus className="w-3 h-3" /> 模板 / 历史
+            <ListPlus className="w-3 h-3" /> {compactPhoneConfigured ? "模板" : "模板 / 历史"}
           </button>
           <button
             type="button"
             onClick={optimizePrompt}
             disabled={!optimizeReady || isOptimizingPrompt}
-            className={`platform-pill inline-flex items-center gap-1 px-2.5 py-1 text-[11px] transition-colors ${
+            className={`platform-pill inline-flex items-center gap-1 px-2.5 py-1 text-[10px] transition-colors ${
               isOptimizingPrompt
                 ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                 : "text-zinc-500 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
@@ -175,13 +233,13 @@ export function ControlPanel() {
             title="调用 Responses/llmapi 优化当前提示词"
           >
             <Sparkles className={`w-3 h-3 ${isOptimizingPrompt ? "animate-pulse" : ""}`} />
-            {isOptimizingPrompt ? "优化中..." : "LLM 优化"}
+            {isOptimizingPrompt ? "优化中..." : compactPhoneConfigured ? "优化" : "LLM 优化"}
           </button>
           <label
             title={apiMode === "responses"
               ? "勾上后 Responses API 文本模型不会优化你的 prompt,逐字传给图像模型"
               : "Images API 形态本就不优化 prompt,此开关无效"}
-            className={`platform-pill inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] ring-1 transition-colors ${
+            className={`platform-pill inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] ring-1 transition-colors ${
               noPromptRevision
                 ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
                 : "text-zinc-500 dark:text-zinc-400 ring-transparent hover:ring-black/[0.08] dark:hover:ring-white/[0.06]"
@@ -197,9 +255,9 @@ export function ControlPanel() {
             <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors ${noPromptRevision ? "border-[var(--accent)] bg-[var(--accent)]" : "border-zinc-400 dark:border-zinc-600"}`}>
               {noPromptRevision && <span className="h-1.5 w-1.5 rounded-sm bg-white" />}
             </span>
-            不优化提示词
+            {compactPhoneConfigured ? "逐字" : "不优化提示词"}
           </label>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{submitShortcutLabel}</span>
+          {!isAndroidPhone && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{submitShortcutLabel}</span>}
         </div>
         {promptPopover && (
           <Suspense fallback={null}>
@@ -215,7 +273,62 @@ export function ControlPanel() {
       </section>
 
       {/* 风格 */}
-      <Section label="风格" trailing={styleTag ? (
+      {compactPhoneConfigured ? (
+        <section className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px] p-4" : "rounded-[16px] p-3"}`}>
+          <button
+            type="button"
+            onClick={() => setMobileStyleOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <span className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">风格与质量</span>
+            <span className="text-[10px] text-zinc-500">{mobileStyleOpen ? "收起 ▾" : "展开 ▸"}</span>
+          </button>
+          {mobileStyleOpen && (
+            <div className="mt-3 flex flex-col gap-3">
+              <div>
+                <div className="mb-1.5 text-[11px] text-zinc-500">质量</div>
+                <Seg>
+                  {QUALITY_TIERS.map((q) => (
+                    <SegItem
+                      key={q.value}
+                      active={quality === q.value}
+                      onClick={() => setField("quality", q.value as QualityValue)}
+                    >
+                      {q.label}
+                    </SegItem>
+                  ))}
+                </Seg>
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-[11px] text-zinc-500">风格</span>
+                  {styleTag && (
+                    <button onClick={() => setField("styleTag", "")} className="text-[11px] text-[var(--accent)] hover:opacity-80">清除</button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {STYLE_CHIPS.map((s) => {
+                    const active = styleTag === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setField("styleTag", active ? "" : s.id)}
+                        className={`platform-chip px-2.5 py-1.5 text-xs ring-1 transition-colors ${
+                          active
+                            ? "active bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
+                            : "text-zinc-600 dark:text-zinc-400 ring-black/[0.08] dark:ring-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-200 hover:ring-[color:var(--accent)]/30"
+                        } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      ) : !compactPhoneSetup && !compactMacCompose && <Section label="风格" trailing={styleTag ? (
         <button onClick={() => setField("styleTag", "")} className="text-[11px] text-[var(--accent)] hover:opacity-80">清除</button>
       ) : null}>
         <div className="flex flex-wrap gap-1.5">
@@ -236,11 +349,11 @@ export function ControlPanel() {
             );
           })}
         </div>
-      </Section>
+      </Section>}
 
       {/* 比例 */}
-      <Section label="比例">
-        <div className="grid grid-cols-6 gap-1.5">
+      {!compactPhoneSetup && !compactMacCompose && <Section label="比例">
+        <div className={`grid gap-1.5 ${compactPhoneConfigured ? "grid-cols-3" : "grid-cols-6"}`}>
           {ASPECT_OPTIONS.map((a) => {
             const active = size === a.value;
             return (
@@ -248,11 +361,11 @@ export function ControlPanel() {
                 key={a.value}
                 onClick={() => setField("size", a.value)}
                 title={a.auto ? "让上游决定尺寸 / 比例" : a.value}
-                className={`flex flex-col items-center gap-1 py-2 ring-1 transition-colors ${
+                className={`flex flex-col items-center gap-1 ring-1 transition-colors ${
                   active
                     ? "bg-[var(--accent-soft)] ring-[color:var(--accent)]/35"
                     : "ring-black/[0.08] dark:ring-white/[0.08] hover:ring-[color:var(--accent)]/30"
-                } ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+                } ${compactPhoneConfigured ? "min-h-[48px] py-2" : "py-2"} ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
               >
                 <span
                   className={`block rounded-sm border-2 ${a.auto ? "border-dashed" : ""} ${
@@ -265,10 +378,10 @@ export function ControlPanel() {
             );
           })}
         </div>
-      </Section>
+      </Section>}
 
       {/* 质量 */}
-      <Section label="质量">
+      {!compactPhoneSetup && !compactPhoneConfigured && !compactMacCompose && <Section label="质量">
         <Seg>
           {QUALITY_TIERS.map((q) => (
             <SegItem
@@ -280,36 +393,186 @@ export function ControlPanel() {
             </SegItem>
           ))}
         </Seg>
-      </Section>
+      </Section>}
 
-      <Section
+      {!compactPhoneSetup && !compactMacCompose && <Section
         label="出图张数"
         trailing={<span className="font-mono-token text-[10px] text-zinc-400">{batchCount}x</span>}
       >
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className={`grid gap-1.5 ${compactPhoneConfigured ? "grid-cols-6" : "grid-cols-3"}`}>
           {[1, 2, 4, 6, 8, 9].map((count) => (
             <button
               key={count}
               type="button"
               onClick={() => setField("batchCount", count)}
               title={`同一提示词发起 ${count} 次请求`}
-              className={`flex h-9 items-center justify-center border text-xs font-medium transition-colors ${
+              className={`flex items-center justify-center border text-xs font-medium transition-colors ${
                 batchCount === count
                   ? "border-[color:var(--accent)]/35 bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-black/[0.08] text-zinc-600 hover:border-[color:var(--accent)]/30 hover:text-zinc-900 dark:border-white/[0.08] dark:text-zinc-400 dark:hover:text-zinc-200"
-              } ${isWindows ? "rounded-[8px]" : "rounded-[12px]"}`}
+              } ${compactPhoneConfigured ? "h-9 rounded-[12px]" : isWindows ? "h-9 rounded-[8px]" : "h-9 rounded-[12px]"}`}
             >
               {count}
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
-          多张会并行请求,完成后在画板按网格挑图;受上游并发限制约束。
-        </p>
-      </Section>
+        {!compactPhoneConfigured && (
+          <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+            多张会并行请求,完成后在画板按网格挑图;受上游并发限制约束。
+          </p>
+        )}
+      </Section>}
+
+      {compactMacCompose && (
+        <section className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px] p-4" : "rounded-[18px] p-4"}`}>
+          <button
+            type="button"
+            onClick={() => setMacComposeOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">创作参数</div>
+              <div className="mt-1 text-[12px] text-zinc-500">
+                {styleTag ? `风格 ${STYLE_CHIPS.find((item) => item.id === styleTag)?.label ?? styleTag}` : "默认风格"} · {size === "auto" ? "Auto 比例" : ASPECT_OPTIONS.find((item) => item.value === size)?.label ?? size} · {QUALITY_TIERS.find((item) => item.value === quality)?.label ?? quality} · {batchCount} 张
+              </div>
+            </div>
+            <span className="text-[10px] text-zinc-500">{macComposeOpen ? "收起 ▾" : "展开 ▸"}</span>
+          </button>
+          {macComposeOpen && (
+            <div className="mt-4 flex flex-col gap-4">
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-[11px] text-zinc-500">风格</span>
+                  {styleTag && (
+                    <button onClick={() => setField("styleTag", "")} className="text-[11px] text-[var(--accent)] hover:opacity-80">清除</button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {STYLE_CHIPS.map((s) => {
+                    const active = styleTag === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setField("styleTag", active ? "" : s.id)}
+                        className={`platform-chip px-2.5 py-1.5 text-xs ring-1 transition-colors ${
+                          active
+                            ? "active bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
+                            : "text-zinc-600 dark:text-zinc-400 ring-black/[0.08] dark:ring-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-200 hover:ring-[color:var(--accent)]/30"
+                        } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 text-[11px] text-zinc-500">比例</div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {ASPECT_OPTIONS.map((a) => {
+                    const active = size === a.value;
+                    return (
+                      <button
+                        key={a.value}
+                        onClick={() => setField("size", a.value)}
+                        title={a.auto ? "让上游决定尺寸 / 比例" : a.value}
+                        className={`flex flex-col items-center gap-1 py-2 ring-1 transition-colors ${
+                          active
+                            ? "bg-[var(--accent-soft)] ring-[color:var(--accent)]/35"
+                            : "ring-black/[0.08] dark:ring-white/[0.08] hover:ring-[color:var(--accent)]/30"
+                        } ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+                      >
+                        <span
+                          className={`block rounded-sm border-2 ${a.auto ? "border-dashed" : ""} ${
+                            active ? "border-[var(--accent)]" : "border-zinc-400 dark:border-zinc-600"
+                          }`}
+                          style={{ width: a.w, height: a.h }}
+                        />
+                        <span className={`text-[10px] ${active ? "text-[var(--accent)]" : "text-zinc-500"}`}>{a.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 text-[11px] text-zinc-500">质量</div>
+                <Seg>
+                  {QUALITY_TIERS.map((q) => (
+                    <SegItem
+                      key={q.value}
+                      active={quality === q.value}
+                      onClick={() => setField("quality", q.value as QualityValue)}
+                    >
+                      {q.label}
+                    </SegItem>
+                  ))}
+                </Seg>
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-[11px] text-zinc-500">出图张数</span>
+                  <span className="font-mono-token text-[10px] text-zinc-400">{batchCount}x</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[1, 2, 4, 6, 8, 9].map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => setField("batchCount", count)}
+                      title={`同一提示词发起 ${count} 次请求`}
+                      className={`flex h-9 items-center justify-center border text-xs font-medium transition-colors ${
+                        batchCount === count
+                          ? "border-[color:var(--accent)]/35 bg-[var(--accent-soft)] text-[var(--accent)]"
+                          : "border-black/[0.08] text-zinc-600 hover:border-[color:var(--accent)]/30 hover:text-zinc-900 dark:border-white/[0.08] dark:text-zinc-400 dark:hover:text-zinc-200"
+                      } ${isWindows ? "rounded-[8px]" : "rounded-[12px]"}`}
+                    >
+                      {count}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {mode === "edit" && (
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-[11px] text-zinc-500">源图片 / 参考图</span>
+                    <span className="text-[10px] text-zinc-400">
+                      {sources.length > 0 ? `${sources.length} 张` : currentImage?.savedPath ? "已就绪" : "未添加"}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <div className={`border border-black/[0.06] bg-[var(--surface)] px-3 py-2 text-[11px] text-zinc-500 dark:border-white/[0.04] dark:text-zinc-400 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+                      {sources.length > 0
+                        ? "已添加显式参考图，可继续追加、替换或拖入更多图片。"
+                        : currentImage?.savedPath
+                          ? "当前画板图会作为隐式源图参与本次编辑。"
+                          : "先添加一张参考图，或从历史里挑一张结果继续编辑。"}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={selectSourceImage}
+                        className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                      >
+                        <ImagePlus className="w-3.5 h-3.5" /> 添加图片
+                      </button>
+                      {sources.length > 0 && (
+                        <button
+                          onClick={clearSources}
+                          className={`platform-action-btn inline-flex items-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-500 transition-colors hover:border-red-400/40 hover:text-red-400 dark:border-white/[0.08] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* 源图(只在 edit 模式)*/}
-      {mode === "edit" && (
+      {mode === "edit" && !compactPhoneSetup && !compactMacCompose && (
         <Section
           label={`源图片 / 参考图${sources.length > 0 ? ` · ${sources.length} 张` : ""}`}
         >
@@ -348,7 +611,7 @@ export function ControlPanel() {
       )}
 
       {/* 高级参数(可折叠)*/}
-      <section>
+      {!compactPhoneSetup && <section>
         <button
           onClick={() => setAdvancedOpen((v) => !v)}
           type="button"
@@ -408,11 +671,34 @@ export function ControlPanel() {
             </div>
           </div>
         )}
-      </section>
+      </section>}
 
       {/* 生成按钮 */}
       <div className="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-[var(--sidebar)] via-[color:var(--sidebar)]/96 to-transparent px-4 pb-4 pt-2">
-        {isRunning ? (
+        {(!apiKey || !baseURL) && !compactPhoneSetup && (
+          <div className={`mb-2 border border-[color:var(--accent)]/18 bg-[var(--accent-soft)] px-3 py-2.5 text-center text-[11px] leading-relaxed text-[var(--accent)] ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}>
+            <div className="font-medium">还没有可用上游配置</div>
+            <div className="mt-1 opacity-90">
+              先配置 BASE_URL 和 API Key，才能测试连接或开始生成。
+            </div>
+            <button
+              type="button"
+              onClick={openUpstreamConfig}
+              className={`mt-2 inline-flex items-center gap-1.5 border border-[color:var(--accent)]/22 bg-white/70 px-3 py-1.5 text-[11px] font-medium text-[var(--accent)] transition-colors hover:bg-white/90 dark:bg-white/[0.06] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            >
+              <Settings className="h-3.5 w-3.5" /> 配置上游
+            </button>
+          </div>
+        )}
+        {compactPhoneSetup ? (
+          <button
+            type="button"
+            onClick={openUpstreamConfig}
+            className={`liquid-primary-button w-full bg-[var(--accent)] py-3 font-semibold text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[10px]" : "rounded-full"}`}
+          >
+            配置上游
+          </button>
+        ) : isRunning ? (
           <button
             onClick={cancel}
             className={`w-full border border-red-500/30 bg-red-500/10 py-3 font-medium text-red-500 transition-colors hover:bg-red-500/16 ${isWindows ? "rounded-[10px]" : "rounded-full"}`}
@@ -427,11 +713,6 @@ export function ControlPanel() {
           >
             {mode === "edit" ? "编辑" : "生成"}
           </button>
-        )}
-        {(!apiKey || !baseURL) && (
-          <p className="mt-2 text-[11px] text-zinc-500 text-center">
-            首次使用请先在右侧工作栏顶部配置上游
-          </p>
         )}
       </div>
     </div>
@@ -448,8 +729,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`platform-card border border-black/[0.05] bg-white/70 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
-      <div className="flex items-center justify-between mb-1.5">
+    <section className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-3" : "p-4"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+      <div className={`flex items-center justify-between ${isAndroidPhone ? "mb-1" : "mb-1.5"}`}>
         <label className="text-[11px] uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">{label}</label>
         {trailing}
       </div>

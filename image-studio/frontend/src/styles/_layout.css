@@ -210,17 +210,32 @@ html[data-target-platform="android"] .history-rail {
 html[data-target-platform="android"] .control-panel,
 html[data-target-platform="android"] .history-rail {
   display: none;
-  padding: 12px;
+  padding: 8px 10px 12px;
   background: var(--bg);
+}
+
+html[data-target-platform="android"] .control-panel,
+html[data-target-platform="android"] .history-rail,
+html[data-target-platform="android"] .canvas-toolbar,
+html[data-target-platform="android"] .source-strip,
+html[data-target-platform="android"] .modal-scroll-body {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html[data-target-platform="android"] .control-panel::-webkit-scrollbar,
+html[data-target-platform="android"] .history-rail::-webkit-scrollbar,
+html[data-target-platform="android"] .canvas-toolbar::-webkit-scrollbar,
+html[data-target-platform="android"] .source-strip::-webkit-scrollbar,
+html[data-target-platform="android"] .modal-scroll-body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 html[data-target-platform="android"] .control-panel > .platform-card,
 html[data-target-platform="android"] .history-rail > .platform-card {
   box-shadow: none;
-}
-
-html[data-target-platform="android"] .control-panel textarea {
-  min-height: 150px;
 }
 
 html[data-target-platform="android"] .control-panel .sticky {
@@ -248,29 +263,49 @@ html[data-target-platform="android"] .studio[data-android-view="history"] .contr
 }
 
 html[data-target-platform="android"] .app-header {
-  min-height: 64px;
+  min-height: 56px;
   background: var(--toolbar);
 }
 
-html[data-target-platform="android"] .canvas-toolbar {
+html[data-target-platform="android"] .app-header .drag-region,
+html[data-target-platform="android"] header.drag-region {
   min-height: 56px;
-  gap: 6px;
-  padding: 8px 10px;
+}
+
+html[data-target-platform="android"] .canvas-toolbar {
+  min-height: 46px;
+  gap: 3px;
+  padding: 5px 6px;
 }
 
 html[data-target-platform="android"] .canvas-toolbar .platform-icon-btn {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
 }
 
 html[data-target-platform="android"] .canvas-toolbar .liquid-primary-button {
-  min-height: 44px;
-  padding-inline: 14px;
+  min-height: 36px;
+  padding-inline: 10px;
 }
 
 html[data-target-platform="android"] .stage-host {
   border-radius: 0;
+}
+
+html[data-target-platform="android"] .source-strip {
+  padding: 5px 6px;
+  gap: 5px;
+}
+
+html[data-target-platform="android"] .source-strip-label {
+  font-size: 10px;
+}
+
+html[data-target-platform="android"] .source-thumb,
+html[data-target-platform="android"] .source-thumb.add {
+  width: 44px;
+  height: 44px;
 }
 
 html[data-target-platform="android"] .android-bottom-nav {

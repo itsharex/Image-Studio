@@ -22,6 +22,73 @@ export function blobToObjectURL(blob: Blob): string {
   return URL.createObjectURL(blob);
 }
 
+export function detectImageMimeTypeFromBase64(b64: string): string | null {
+  try {
+    const bin = atob(b64.slice(0, 64));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (
+      bytes.length >= 8 &&
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47 &&
+      bytes[4] === 0x0d &&
+      bytes[5] === 0x0a &&
+      bytes[6] === 0x1a &&
+      bytes[7] === 0x0a
+    ) {
+      return "image/png";
+    }
+    if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+      return "image/jpeg";
+    }
+    if (
+      bytes.length >= 12 &&
+      bytes[0] === 0x52 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x46 &&
+      bytes[3] === 0x46 &&
+      bytes[8] === 0x57 &&
+      bytes[9] === 0x45 &&
+      bytes[10] === 0x42 &&
+      bytes[11] === 0x50
+    ) {
+      return "image/webp";
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+export function guessImageMimeTypeFromName(name: string | null | undefined): string | null {
+  const lower = (name ?? "").trim().toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return null;
+}
+
+export function imageExtensionForMimeType(mimeType: string | null | undefined): string {
+  switch ((mimeType ?? "").trim().toLowerCase()) {
+    case "image/jpeg":
+      return "jpg";
+    case "image/webp":
+      return "webp";
+    default:
+      return "png";
+  }
+}
+
+export function dataURLFromBase64(
+  b64: string,
+  mimeType?: string | null,
+): string {
+  const detected = mimeType || detectImageMimeTypeFromBase64(b64) || "image/png";
+  return `data:${detected};base64,${b64}`;
+}
+
 export function useBlobURL(blob?: Blob | null, fallbackB64?: string | null): string | null {
   const [url, setUrl] = useState<string | null>(null);
 

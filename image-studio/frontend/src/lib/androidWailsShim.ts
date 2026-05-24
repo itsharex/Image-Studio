@@ -21,7 +21,6 @@ declare global {
 const SHIM_KEY_PREFIX = "android-shell";
 const OUTPUT_DIR_KEY = `${SHIM_KEY_PREFIX}.outputDir`;
 const DEFAULT_OUTPUT_DIR = "/sdcard/Android/data/top.gptcodex.imagestudio/files/Pictures/ImageStudio";
-const unsupportedError = "Android shell build does not include the desktop Go backend for this operation yet.";
 
 function isAndroidShellTarget() {
   return targetPlatform === "android" || targetPlatform === "android-pad";
@@ -29,7 +28,7 @@ function isAndroidShellTarget() {
 
 function ensureWindowRuntime() {
   if (typeof window === "undefined") return;
-  if (window.runtime && window.go?.backend?.Service) return;
+  if (window.runtime) return;
 
   const listeners = new Map<string, Set<(...args: any[]) => void>>();
 
@@ -89,95 +88,6 @@ function ensureWindowRuntime() {
     return Promise.reject(new Error(`${method} is unavailable in this environment`));
   };
 
-  const rejectUnsupported = () => Promise.reject(new Error(unsupportedError));
-
-  const getStoredApiKey = (user: string) => invokeNative("GetStoredAPIKey", [user], () => {
-    try { return localStorage.getItem(`${SHIM_KEY_PREFIX}.apikey.${user}`) ?? ""; } catch { return ""; }
-  });
-
-  const setStoredApiKey = (user: string, value: string) => invokeNative("SetStoredAPIKey", [user, value], () => {
-    try {
-      if (value.trim()) localStorage.setItem(`${SHIM_KEY_PREFIX}.apikey.${user}`, value.trim());
-      else localStorage.removeItem(`${SHIM_KEY_PREFIX}.apikey.${user}`);
-    } catch {
-      // ignore
-    }
-  });
-
-  const deleteStoredApiKey = (user: string) => invokeNative("DeleteStoredAPIKey", [user], () => {
-    try { localStorage.removeItem(`${SHIM_KEY_PREFIX}.apikey.${user}`); } catch { /* ignore */ }
-  });
-
-  const getOutputDir = () => invokeNative("GetOutputDir", [], () => {
-    try { return localStorage.getItem(OUTPUT_DIR_KEY) ?? DEFAULT_OUTPUT_DIR; } catch { return DEFAULT_OUTPUT_DIR; }
-  });
-
-  const setOutputDir = (value: string) => invokeNative("SetOutputDir", [value], () => {
-    try {
-      if (value.trim()) localStorage.setItem(OUTPUT_DIR_KEY, value.trim());
-      else localStorage.removeItem(OUTPUT_DIR_KEY);
-    } catch {
-      // ignore
-    }
-  });
-
-  const service: Record<string, AnyFn> = {
-    Cancel: (_jobId: string) => rejectUnsupported(),
-    ChooseOutputDir: () => invokeNative("ChooseOutputDir", [], getOutputDir),
-    CropImage: (path: string, x: number, y: number, w: number, h: number) => invokeNative("CropImage", [path, x, y, w, h]),
-    DeleteStoredAPIKey: (user: string) => deleteStoredApiKey(user),
-    Edit: () => rejectUnsupported(),
-    ExportHistoryToFile: (jsonContent: string) => {
-      if (window.AndroidImageStudio?.exportHistory) {
-        const suggested = `image-studio-history-${Date.now()}.json`;
-        return Promise.resolve(window.AndroidImageStudio.exportHistory(jsonContent, suggested));
-      }
-      return invokeNative("ExportHistoryToFile", [jsonContent]);
-    },
-    FlipImage: (path: string, horizontal: boolean) => invokeNative("FlipImage", [path, horizontal]),
-    Generate: () => rejectUnsupported(),
-    GetOutputDir: () => getOutputDir(),
-    GetStoredAPIKey: (user: string) => getStoredApiKey(user),
-    ImportHistoryFromFile: () => {
-      if (window.AndroidImageStudio?.importHistory) {
-        return Promise.resolve(window.AndroidImageStudio.importHistory() ?? "");
-      }
-      return invokeNative("ImportHistoryFromFile", []);
-    },
-    ImportImageFromB64: (imageB64: string, suggestedName: string) => invokeNative("ImportImageFromB64", [imageB64, suggestedName]),
-    OpenExternalURL: (url: string) => invokeNative("OpenExternalURL", [url], () => {
-      const opened = window.open(url, "_blank", "noopener,noreferrer");
-      if (!opened) window.location.href = url;
-    }),
-    OpenFile: (path: string) => invokeNative("OpenFile", [path]),
-    OpenImageDialog: () => invokeNative("OpenImageDialog", []),
-    OpenOutputDir: () => {
-      if (window.AndroidImageStudio?.openOutputDir) return Promise.resolve(window.AndroidImageStudio.openOutputDir());
-      return invokeNative("OpenOutputDir", [], () => undefined);
-    },
-    OptimizePrompt: () => rejectUnsupported(),
-    ReadImageAsBase64: (path: string) => invokeNative("ReadImageAsBase64", [path]),
-    ReadTextFile: (path: string) => invokeNative("ReadTextFile", [path]),
-    RegisterTrustedOutputDir: (_root: string) => Promise.resolve(),
-    RotateImage: (path: string, degrees: number) => invokeNative("RotateImage", [path, degrees]),
-    SaveImageAs: async (imageB64: string, suggestedName: string) => {
-      if (window.AndroidImageStudio?.saveImage) {
-        return window.AndroidImageStudio.saveImage(imageB64, suggestedName);
-      }
-      const url = URL.createObjectURL(base64ToBlob(imageB64));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = suggestedName || "image-studio.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      return suggestedName;
-    },
-    SetOutputDir: (path: string) => setOutputDir(path),
-    SetStoredAPIKey: (user: string, value: string) => setStoredApiKey(user, value),
-  };
-
   window.runtime = window.runtime ?? {
     EventsOnMultiple: on,
     EventsOff: (...eventNames: string[]) => {
@@ -195,16 +105,6 @@ function ensureWindowRuntime() {
     ClipboardGetText: async () => navigator.clipboard.readText(),
     ClipboardSetText: async (text: string) => navigator.clipboard.writeText(text),
   };
-
-  window.go = window.go ?? {};
-  window.go.backend = window.go.backend ?? {};
-  window.go.backend.Service = window.go.backend.Service ?? service;
-
-  for (const [name, fn] of Object.entries(service)) {
-    if (!(name in window.go.backend.Service)) {
-      window.go.backend.Service[name] = fn;
-    }
-  }
 }
 
 if (typeof window !== "undefined" && isAndroidShellTarget()) {

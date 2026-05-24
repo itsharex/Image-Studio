@@ -32,7 +32,8 @@ function fromOverride(raw?: string): UITargetPlatform | null {
 }
 
 function detectTargetPlatform(): UITargetPlatform {
-  const override = fromOverride(import.meta.env.VITE_TARGET_PLATFORM);
+  const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+  const override = fromOverride(env?.VITE_TARGET_PLATFORM);
   if (override) return override;
   if (typeof navigator === "undefined") return "web";
 

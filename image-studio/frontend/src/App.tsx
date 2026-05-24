@@ -26,7 +26,7 @@ function App() {
   const importImageFile = useStudioStore((s) => s.importImageFile);
   const fullscreen = useStudioStore((s) => s.fullscreen);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [androidView, setAndroidView] = useState<"compose" | "canvas" | "history">("canvas");
+  const [androidView, setAndroidView] = useState<"compose" | "canvas" | "history">(isAndroidPhone ? "compose" : "canvas");
   useEffect(() => { bootstrap(); }, [bootstrap]);
 
   // Global app-level shortcuts. Canvas-scoped shortcuts (undo/redo, tool
@@ -86,8 +86,13 @@ function App() {
       e.preventDefault();
       depth = 0;
       setDragHover(false);
-      const file = e.dataTransfer?.files?.[0];
-      if (file) importImageFile(file);
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      void (async () => {
+        for (const file of Array.from(files)) {
+          await importImageFile(file);
+        }
+      })();
     };
     const onPaste = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -158,9 +163,7 @@ function App() {
       <Suspense fallback={null}>
         <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       </Suspense>
-      <Suspense fallback={null}>
-        <ResultDetailDrawer />
-      </Suspense>
+      <ResultDetailGate />
       <StarPromptGate />
     </div>
   );
@@ -169,11 +172,22 @@ function App() {
 // Star prompt 弹窗只在 store.starPromptOpen=true 时才挂载 Suspense + lazy 模块。
 // 拆出来跟 UpstreamConfigGate 一样,避免顶层 App 因为一个布尔 state 重渲整棵树。
 function StarPromptGate() {
+  if (isMac) return null;
   const open = useStudioStore((s) => s.starPromptOpen);
   if (!open) return null;
   return (
     <Suspense fallback={null}>
       <StarPromptModal open={open} />
+    </Suspense>
+  );
+}
+
+function ResultDetailGate() {
+  const item = useStudioStore((s) => s.resultDetail);
+  if (!item) return null;
+  return (
+    <Suspense fallback={null}>
+      <ResultDetailDrawer />
     </Suspense>
   );
 }

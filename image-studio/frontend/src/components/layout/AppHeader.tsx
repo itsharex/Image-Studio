@@ -1,8 +1,8 @@
 import { Github, Monitor, Moon, Plus, Settings, Star, Sun } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
-import { OpenExternalURL } from "../../../wailsjs/go/backend/Service";
+import { OpenExternalURL } from "../../lib/runtimeHost";
 import { HitokotoStrip } from "./HitokotoStrip";
-import { isAndroidPhone, isWindows, usesAndroidUI, usesAppleUI } from "../../lib/platform";
+import { isAndroidPhone, isMac, isWindows, usesAndroidUI, usesAppleUI } from "../../lib/platform";
 import { openExternalURLForPlatform } from "../../lib/androidBridge";
 
 const REPO_URL = "https://github.com/RoseKhlifa/Image-Studio";
@@ -29,7 +29,9 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
       <div className="min-w-0 flex-1">
         <div
           className={`text-zinc-900 dark:text-zinc-100 ${
-            isWindows
+            isAndroidPhone
+              ? "text-[12px] font-semibold tracking-[0]"
+              : isWindows
               ? "font-[600] text-[14px] tracking-[0]"
               : "text-[13px] font-semibold tracking-[-0.01em]"
           }`}
@@ -37,13 +39,15 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
         >
           Image Studio
         </div>
-        <div className={`flex min-w-0 items-center text-zinc-500 dark:text-zinc-400 ${isWindows ? "mt-0 text-[10px]" : "mt-0.5 text-[11px]"}`}>
-          <HitokotoStrip />
-        </div>
+        {!isAndroidPhone && !isMac && (
+          <div className={`flex min-w-0 items-center text-zinc-500 dark:text-zinc-400 ${isWindows ? "mt-0 text-[10px]" : "mt-0.5 text-[11px]"}`}>
+            <HitokotoStrip />
+          </div>
+        )}
       </div>
 
       <div className={`no-drag ml-auto flex items-center ${isWindows ? "gap-1" : "gap-1.5"}`}>
-        <HeaderIconBtn
+        {!isAndroidPhone && <HeaderIconBtn
           onClick={() => newWorkspace()}
           title={workspaces.length > 1 ? `${workspaces.length} 个标签 · 新建` : "新建标签"}
         >
@@ -53,7 +57,7 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
               {workspaces.length}
             </span>
           )}
-        </HeaderIconBtn>
+        </HeaderIconBtn>}
         {!isAndroidPhone && <div className={`platform-seg flex items-center p-0.5 ring-1 ${
           isWindows
             ? "bg-white/66 ring-black/[0.08] dark:bg-white/[0.04] dark:ring-white/[0.08]"
@@ -81,20 +85,18 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
             <Moon className="h-3.5 w-3.5" />
           </HeaderToggleBtn>
         </div>}
-        <HeaderIconBtn
+        {!isAndroidPhone && !isMac && <HeaderIconBtn
           onClick={() => openExternalURLForPlatform(REPO_URL, OpenExternalURL).catch(() => pushToast("无法打开浏览器", "error"))}
           title="GitHub"
         >
           <Github className="h-4 w-4" />
-        </HeaderIconBtn>
-        {/* 给项目点个 star —— 跟自动弹窗共用同一份 modal,手动点不写「再也别弹」标志。
-            图标用 amber 调色让它在一排灰色 icon 里轻微凸出,提示这是"鼓励作者"的入口。 */}
-        <HeaderIconBtn
+        </HeaderIconBtn>}
+        {!isAndroidPhone && !isMac && <HeaderIconBtn
           onClick={openStarPrompt}
           title="给项目点个 Star"
         >
           <Star className="h-4 w-4 text-amber-500 dark:text-amber-400" fill="currentColor" strokeWidth={1.5} />
-        </HeaderIconBtn>
+        </HeaderIconBtn>}
         <HeaderIconBtn
           onClick={onOpenSettings}
           title="设置"

@@ -379,9 +379,15 @@ Android 保存逻辑与桌面端不同:前端会优先调用壳层注入的 `win
 
 ---
 
+## License
+
+[MIT](./LICENSE) © 2026
+
+---
+
 ## 致谢
 
-- [**linux.do**](https://linux.do/) —— 感谢 L 站及其社区为项目开发与交流提供的支持与启发。
+- <a href="https://linux.do/"><img src="./docs/linuxdo.png" alt="linux.do" height="20" align="absmiddle" /></a> [**linux.do**](https://linux.do/) —— 感谢 L 站及其社区为项目开发与交流提供的支持与启发。
 
 ### 赞助商
 
@@ -392,12 +398,6 @@ Android 保存逻辑与桌面端不同:前端会优先调用壳层注入的 `win
   <br /><br />
   <a href="https://muxueai.pro"><img src="./docs/%E8%B5%9E%E5%8A%A9-muxueai.pro.png" alt="赞助商 · muxueai.pro" width="720"></a>
 </p>
-
----
-
-## License
-
-[MIT](./LICENSE) © 2026
 
 ---
 

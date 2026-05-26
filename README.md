@@ -44,7 +44,7 @@
 
 两种模式可在「🔧 上游配置」里切换,使用同一套 UI 和文件落地逻辑。
 
-最初是个 Python CLI 脚本(`generate_gptcodex_image.py`),后来重写为 Go,再封装成 Wails 桌面应用,补全了画板、蒙版、多参考图、撤销重做、历史对比、多标签页等图像编辑器该有的能力。
+最初是一个轻量命令行原型,后来重写为 Go,再封装成 Wails 桌面应用,补全了画板、蒙版、多参考图、撤销重做、历史对比、多标签页等图像编辑器该有的能力。
 
 ---
 
@@ -56,8 +56,8 @@
 | 🔀 **双 API 形态** | 一个 toggle 在 Responses API(SSE 保活,需 gpt-5.5 分组)和 Images API(标准 `/v1/images/generations` + `/v1/images/edits`,可用 image-2 分组)间切换 |
 | 🔁 **自动重试 + 部分结果回退** | 识别 Cloudflare 524/504、JSON `status` 5xx、`retryable=true` 自动重试 3 次;Responses 模式下 final result 没拿到时用最后的 `partial_image_b64` 兜底 |
 | 📦 **大 base64 单行缓冲** | `partial_image_b64` 单行可超 4MB,自定义 8MB scanner buffer,不会被 Go bufio 默认的 64KB 截断 |
-| 🔌 **双 transport** | 默认 net/http 直连;遇到 TLS 指纹 / 代理问题可一键切到子进程 `curl`(`--http1.1 --ssl-no-revoke`) |
-| ⏹ **真正可取消** | `context.Context` 端到端,包括 `exec.CommandContext` 给 curl,「取消」按钮能立刻中断 in-flight 请求 |
+| 🌐 **原生 HTTP 内核** | 全链路固定使用 `net/http` 原生实现,请求路径更统一,也便于多端共享内核逻辑 |
+| ⏹ **真正可取消** | `context.Context` 端到端控制请求生命周期,「取消」按钮能立刻中断 in-flight 请求 |
 | 🖼 **完整图像编辑器** | Konva 画布、蒙版+橡皮、4 种标注、旋转/翻转/裁剪(就地编辑不污染历史)、历史对比 |
 | 🧩 **多标签 workspace** | 浏览器风的多 tab,每个独立 prompt/参数/源图;切换不丢现场 |
 | 🔧 **首次启动引导** | apiKey / baseURL 缺失时自动弹「上游配置」窗口,5 字段一次填完(API 形态、BASE_URL、API Key、文本模型、图像模型) |
@@ -235,14 +235,14 @@ macOS 推荐直接 `bash scripts/package-local-macos-app.sh`，产物在 `image-
 - 参数:**Auto + 5 种比例**(1:1 / 2:3 / 3:2 / 16:9 / 9:16)· **Auto + 3 档质量**(1K/2K/4K)· **输出格式**(PNG/JPEG/WebP)· seed · negative prompt · 5 种风格 chip
 - **不优化提示词** 开关:Responses API 模式下勾上后顶层加 instructions 让模型逐字使用 prompt
 - **双 API 形态**:Responses API(SSE 保活)/ Images API(标准 generations + edits)随时切换
-- 上游可配:BASE_URL、文本模型 ID、图像模型 ID、传输通道(native/curl)
+- 上游可配:BASE_URL、文本模型 ID、图像模型 ID
 - prompt 历史(自动去重,cap 50)+ 8 个内置模板(写实/二次元/水彩/像素等)
 
 ### 画板(Konva)
 - 缩放(鼠标滚轮以指针为中心)/ 拖动 / 双击 fit ↔ 100%
 - **蒙版**:画笔 + 橡皮,大小滑块,实时半透明叠加
 - **标注**:矩形 / 箭头 / 自由画笔 / 文字,8 色,选中后 Delete 删除
-- **图变换**(后端 Go image 库):旋转 90°/-90°、水平/竖直翻转、矩形选区裁出 —— 就地编辑当前画布图、**不创建新历史条目**,「另存为」拿到最新版本
+- **图变换**(macOS 优先走 Core Image/Metal; Android / Windows / Linux 优先走 WebGL GPU,不可用时再回退 CPU):旋转 90°/-90°、水平/竖直翻转、矩形选区裁出 —— 就地编辑当前画布图、**不创建新历史条目**,「另存为」拿到最新版本
 - **历史对比**:Shift+点击进入,左右分屏 + 中间可拖动 split bar
 - 全屏 `⌃⌘F`(macOS) / `F11`(Windows/Linux),隐藏左右栏专注画板
 
@@ -265,7 +265,6 @@ macOS 推荐直接 `bash scripts/package-local-macos-app.sh`，产物在 `image-
 - **🔧 上游配置**:首次启动自动弹出 / 之后可手动呼起;5 字段集中管理(API 形态 / BASE_URL / API Key / 文本模型 ID / 图像模型 ID),含 API Key 显示切换 + 内嵌测试连接按钮
 - 主题:深色 / 浅色
 - 字号:小 / 中 / 大
-- 网络通道:auto / native / curl(应对 TLS 指纹 / 代理问题;curl 模式不再把 API Key 暴露到命令行参数)
 - 参数预设保存(尺寸 + 质量 + 输出格式 + 风格,常用配置一键应用)
 - 历史导入 / 导出 JSON
 - 清除 API Key / 清空历史
@@ -302,7 +301,7 @@ macOS 推荐直接 `bash scripts/package-local-macos-app.sh`，产物在 `image-
 | 类型 | 位置 |
 |---|---|
 | API Key | 系统安全存储(Keychain / Credential Manager / Secret Service) |
-| 上游配置(API 形态、BASE_URL、模型 ID、传输通道) | `localStorage` |
+| 上游配置(API 形态、BASE_URL、模型 ID) | `localStorage` |
 | 历史记录元数据 | 本地 IndexedDB |
 | 生成的 PNG | 桌面端在输出目录下的 `images/`(命名形如 `image-generate-<slug>-<ts>.png`);Android 端由壳层保存到 MediaStore/Pictures,无壳层时走浏览器下载或系统分享 |
 | 拖入 / 变换的图 | 系统 config 目录下的 `image-studio/imports/`(内部 scratch,与输出目录解耦) |
@@ -334,7 +333,6 @@ Android 保存逻辑与桌面端不同:前端会优先调用壳层注入的 `win
 - 上游网关超时在很多中转站很常见。本应用自动重试 3 次,如果都失败:
   - **如果当前是 Images API 模式,优先切到 Responses API** —— SSE 保活就是为此设计的(前提是你的 key 有 gpt-5.5 分组权限)
   - 检查 key 是否过期 / 余额 / 是否绑对了分组(见上方 [API 形态 · 分组怎么选](#api-形态--分组怎么选))
-  - 设置 → 网络通道 改成 `curl`,有时能绕过原生 HTTP 的 TLS 指纹问题;此模式已改为通过私有配置文件传 header,不会把 API Key 放进进程参数
   - 历史项 右键 → **查看 raw 响应**,看上游具体返回了什么(原始 SSE / JSON 全文)
 
 ### `model not found` / 401 / 403
@@ -367,7 +365,6 @@ Android 保存逻辑与桌面端不同:前端会优先调用壳层注入的 `win
 │   │   ├── images_api.go         # Images API(generations + edits multipart)
 │   │   ├── retry.go              # 524/504 识别 + 错误归因
 │   │   ├── http_native.go        # net/http + 8MB scanner buffer
-│   │   ├── http_curl.go          # curl 子进程 fallback
 │   │   └── types.go              # Options / APIMode / SizeOptions 等
 │   ├── internal/{promptui,fsio}/ # 终端交互 + 文件 IO
 │   └── cmd/gptcodex-image/main.go

@@ -41,7 +41,6 @@ import {
   SourceImage,
   ThemeMode,
   Toast,
-  TransportKind,
   UpstreamProfile,
   Workspace,
   Annotation,
@@ -246,7 +245,6 @@ interface StudioState {
   // 输出图像编码:png / jpeg / webp。落盘扩展名 jpeg → .jpg(后端 client.FileExtForFormat)。
   outputFormat: OutputFormatValue;
   seed: number;          // 0 = random
-  transport: TransportKind;
   kernelRuntimeMode: KernelRuntimeMode;
 
   // 顶层「当前生效」上游字段 —— 它们都是 active profile 的实时镜像,只读。
@@ -286,7 +284,7 @@ interface StudioState {
   errorMessage: string | null;
   // 失败时上游原始响应文件的绝对路径(SSE 文本 / Images API JSON)。前端
   // 错误条幅上的「查看日志」按钮用它调 OpenFile 让系统默认应用打开。
-  // 请求都没发出就失败的早期错误(参数校验、transport 初始化)RawPath 为空。
+  // 请求都没发出就失败的早期错误(参数校验、早期 IO 初始化)RawPath 为空。
   errorRawPath: string | null;
   isRunning: boolean;
   // Snapshot of the last successfully-built payload, used by the retry button
@@ -604,7 +602,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   quality: "medium",
   outputFormat: "png",
   seed: 0,
-  transport: "auto",
   kernelRuntimeMode: "auto",
   baseURL: "",
   textModelID: "",
@@ -730,9 +727,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     } else if (key === "lastPayload") {
       set({ workspaces: patchWorkspaceRuntime(get().workspaces, get().activeWorkspaceId, { lastPayload: value as backend.GenerateOptions | null }) });
     }
-    if (key === "transport") {
-      try { localStorage.setItem("gptcodex.transport", String(value)); } catch {}
-    } else if (key === "kernelRuntimeMode") {
+    if (key === "kernelRuntimeMode") {
       try { localStorage.setItem("gptcodex.kernelRuntimeMode", String(value)); } catch {}
       setKernelRuntimeMode(value as KernelRuntimeMode);
     } else if (key === "noPromptRevision") {
@@ -1044,7 +1039,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       baseURL: cleanedBaseURL,
       textModelID: s.textModelID,
       imageModelID: s.imageModelID,
-      transport: s.transport,
       apiMode: s.apiMode,
       noPromptRevision: s.noPromptRevision,
       concurrencyLimit,
@@ -1072,7 +1066,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         sources: s.sources,
         currentImage: s.currentImage,
         styleTag: s.styleTag,
-        transport: s.transport,
       });
     }
   },
@@ -1114,7 +1107,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (item.seed !== undefined) patch.seed = item.seed;
     if (item.negativePrompt !== undefined) patch.negativePrompt = item.negativePrompt;
     if (item.styleTag !== undefined) patch.styleTag = item.styleTag;
-    if (item.transport) patch.transport = item.transport;
     if (item.outputFormat) patch.outputFormat = item.outputFormat;
     set(patch as any);
     get().pushToast("已应用此图的参数到控制台", "success");
@@ -1207,12 +1199,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const raw = localStorage.getItem("gptcodex.fontScale");
       const n = Number(raw);
       if (!Number.isNaN(n) && n > 0.5 && n < 2) fontScale = n;
-    } catch {}
-    // 网络通道(全局)
-    let transport: TransportKind = "auto";
-    try {
-      const v = localStorage.getItem("gptcodex.transport");
-      if (v === "auto" || v === "native" || v === "curl") transport = v;
     } catch {}
     let kernelRuntimeMode: KernelRuntimeMode = "auto";
     try {
@@ -1375,7 +1361,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       : !activeProfile || !activeKey.trim() || !baseURL.trim();
     set({
       apiKey: activeKey, history: trimHistory(items), promptHistory, presets, theme, fontScale,
-      apiMode, baseURL, textModelID, imageModelID, transport, kernelRuntimeMode, noPromptRevision,
+      apiMode, baseURL, textModelID, imageModelID, kernelRuntimeMode, noPromptRevision,
       outputFormat,
       profiles,
       activeProfileId,
@@ -1574,7 +1560,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const r = await RotateImage(cur.savedPath, degrees);
       await loadTransformedAsCurrent(r.path);
-      get().pushToast(`已旋转 ${degrees}°`, "success");
+      get().pushToast(`已旋转 ${degrees}° · ${r.acceleration ?? "native"}`, "success");
     } catch (e: any) {
       get().pushToast(`旋转失败:${e?.message ?? e}`, "error");
     }
@@ -1594,7 +1580,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const r = await FlipImage(cur.savedPath, horizontal);
       await loadTransformedAsCurrent(r.path);
-      get().pushToast(horizontal ? "已水平翻转" : "已竖直翻转", "success");
+      get().pushToast(`${horizontal ? "已水平翻转" : "已竖直翻转"} · ${r.acceleration ?? "native"}`, "success");
     } catch (e: any) {
       get().pushToast(`翻转失败:${e?.message ?? e}`, "error");
     }
@@ -1614,7 +1600,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const r = await CropImage(cur.savedPath, Math.round(x), Math.round(y), Math.round(w), Math.round(h));
       await loadTransformedAsCurrent(r.path);
-      get().pushToast(`已裁出 ${Math.round(w)}×${Math.round(h)}`, "success");
+      get().pushToast(`已裁出 ${Math.round(w)}×${Math.round(h)} · ${r.acceleration ?? "native"}`, "success");
     } catch (e: any) {
       get().pushToast(`裁剪失败:${e?.message ?? e}`, "error");
     }
@@ -1631,7 +1617,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       quality: s.quality,
       outputFormat: s.outputFormat,
       negativePrompt: s.negativePrompt,
-      transport: s.transport,
       batchCount: s.batchCount,
     };
     const next = [...s.presets, p];
@@ -1648,7 +1633,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       quality: p.quality,
       outputFormat: p.outputFormat ?? get().outputFormat,
       negativePrompt: p.negativePrompt,
-      transport: p.transport,
       batchCount: p.batchCount,
     });
     get().pushToast(`已应用预设「${p.name}」`, "success");
@@ -2163,7 +2147,6 @@ async function launchOneJob(
     sources: SourceImage[];
     currentImage: HistoryItem | null;
     styleTag: string;
-    transport: TransportKind;
   },
 ): Promise<void> {
   const store = useStudioStore;
@@ -2259,7 +2242,6 @@ async function launchOneJob(
           seed: payload.seed || undefined,
           negativePrompt: payload.negativePrompt || undefined,
           styleTag: snapshot.styleTag || undefined,
-          transport: snapshot.transport,
           elapsedSec: Number(elapsedSec.toFixed(1)),
           savedPath: r.savedPath,
           rawPath: r.rawPath,

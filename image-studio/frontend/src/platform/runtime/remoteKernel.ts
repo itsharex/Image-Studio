@@ -35,7 +35,6 @@ export type RemoteGeneratePayload = {
   baseURL: string;
   textModelID: string;
   imageModelID: string;
-  transport: string;
   apiMode: string;
   noPromptRevision: boolean;
   concurrencyLimit?: number;

@@ -85,7 +85,6 @@ try {
       baseURL: origin,
       textModelID: "gpt-5.5",
       imageModelID: "gpt-image-2",
-      transport: "auto",
       apiMode: "responses",
       noPromptRevision: false,
     }),

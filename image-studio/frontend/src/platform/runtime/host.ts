@@ -47,7 +47,6 @@ type GenerateOptionsLike = {
   baseURL: string;
   textModelID: string;
   imageModelID: string;
-  transport: string;
   apiMode: string;
   noPromptRevision: boolean;
   concurrencyLimit?: number;
@@ -65,6 +64,7 @@ type PromptOptimizeOptionsLike = {
 
 type JobStartedLike = { jobId: string };
 type ImportedImageLike = { path: string; imageB64: string };
+type ImageTransformResultLike = { path: string; acceleration?: string };
 type SelectFileResponseLike = { path: string; size: number; imageB64?: string };
 
 export type HostKind = "wails-desktop" | "android-shell" | "browser";
@@ -225,6 +225,23 @@ function fileNameFromPath(path: string | undefined): string {
   return path.split(/[\\/]/).pop() || "image.png";
 }
 
+function supportsDesktopNativeGPUTransforms(): boolean {
+  return detectHostKind() === "wails-desktop" && targetPlatform === "macos";
+}
+
+async function persistVirtualTransformResult(
+  result: { path: string; imageB64?: string; mimeType?: string; name?: string; acceleration?: string },
+  fallbackName: string,
+): Promise<ImageTransformResultLike> {
+  const imageB64 = result.imageB64 || readVirtualImageAsBase64(result.path);
+  const suggested = result.name || fallbackName;
+  const imported = await ImportImageFromB64(imageB64, suggested);
+  return {
+    path: imported.path,
+    acceleration: result.acceleration,
+  };
+}
+
 async function materializeReadablePathAsVirtual(path: string): Promise<ImportedImageLike> {
   const imageB64 = await ReadImageAsBase64(path);
   return registerVirtualImage({
@@ -328,7 +345,10 @@ export function getHostCapabilities(): HostCapabilities {
     localGeneration: localGenerationCapable && localModeEnabled,
     promptOptimization: localPromptOptimizeCapable && localModeEnabled,
     nativeFileDialogs: kind === "wails-desktop" || canInvokeAndroidMethod("OpenImageDialog"),
-    nativeImageTransforms: kind === "wails-desktop" && hasServiceMethod("RotateImage") && hasServiceMethod("FlipImage") && hasServiceMethod("CropImage"),
+    nativeImageTransforms:
+      (kind === "wails-desktop" && hasServiceMethod("RotateImage") && hasServiceMethod("FlipImage") && hasServiceMethod("CropImage"))
+      || kind === "android-shell"
+      || kind === "browser",
     nativeHistoryFileIO: kind === "wails-desktop" || canInvokeAndroidMethod("ImportHistoryFromFile"),
     nativeOutputDirectoryPicker: hasServiceMethod("ChooseOutputDir") && kind !== "android-shell",
     secureCredentialStore: kind === "wails-desktop",
@@ -495,37 +515,43 @@ export function ImportImageFromB64(imageB64: string, suggestedName: string): Pro
   return Promise.resolve(registerVirtualImage({ imageB64, suggestedName }));
 }
 
-export function RotateImage(path: string, degrees: number): Promise<ImportedImageLike> {
+export function RotateImage(path: string, degrees: number): Promise<ImageTransformResultLike> {
   if (isVirtualPath(path)) {
-    return rotateVirtualImage(path, degrees);
+    return rotateVirtualImage(path, degrees).then((result) => ({ path: result.path, acceleration: result.acceleration || "cpu-canvas" }));
   }
-  return invokeService<ImportedImageLike>("RotateImage", path, degrees)
-    .catch(async () => {
-      const imported = await materializeReadablePathAsVirtual(path);
-      return rotateVirtualImage(imported.path, degrees);
-    });
+  if (supportsDesktopNativeGPUTransforms()) {
+    return invokeService<ImageTransformResultLike>("RotateImage", path, degrees);
+  }
+  return materializeReadablePathAsVirtual(path).then(async (imported) => {
+    const result = await rotateVirtualImage(imported.path, degrees);
+    return persistVirtualTransformResult(result, fileNameFromPath(path));
+  });
 }
 
-export function FlipImage(path: string, horizontal: boolean): Promise<ImportedImageLike> {
+export function FlipImage(path: string, horizontal: boolean): Promise<ImageTransformResultLike> {
   if (isVirtualPath(path)) {
-    return flipVirtualImage(path, horizontal);
+    return flipVirtualImage(path, horizontal).then((result) => ({ path: result.path, acceleration: result.acceleration || "cpu-canvas" }));
   }
-  return invokeService<ImportedImageLike>("FlipImage", path, horizontal)
-    .catch(async () => {
-      const imported = await materializeReadablePathAsVirtual(path);
-      return flipVirtualImage(imported.path, horizontal);
-    });
+  if (supportsDesktopNativeGPUTransforms()) {
+    return invokeService<ImageTransformResultLike>("FlipImage", path, horizontal);
+  }
+  return materializeReadablePathAsVirtual(path).then(async (imported) => {
+    const result = await flipVirtualImage(imported.path, horizontal);
+    return persistVirtualTransformResult(result, fileNameFromPath(path));
+  });
 }
 
-export function CropImage(path: string, x: number, y: number, width: number, height: number): Promise<ImportedImageLike> {
+export function CropImage(path: string, x: number, y: number, width: number, height: number): Promise<ImageTransformResultLike> {
   if (isVirtualPath(path)) {
-    return cropVirtualImage(path, x, y, width, height);
+    return cropVirtualImage(path, x, y, width, height).then((result) => ({ path: result.path, acceleration: result.acceleration || "cpu-canvas" }));
   }
-  return invokeService<ImportedImageLike>("CropImage", path, x, y, width, height)
-    .catch(async () => {
-      const imported = await materializeReadablePathAsVirtual(path);
-      return cropVirtualImage(imported.path, x, y, width, height);
-    });
+  if (supportsDesktopNativeGPUTransforms()) {
+    return invokeService<ImageTransformResultLike>("CropImage", path, x, y, width, height);
+  }
+  return materializeReadablePathAsVirtual(path).then(async (imported) => {
+    const result = await cropVirtualImage(imported.path, x, y, width, height);
+    return persistVirtualTransformResult(result, fileNameFromPath(path));
+  });
 }
 
 export function ReadImageAsBase64(path: string): Promise<string> {

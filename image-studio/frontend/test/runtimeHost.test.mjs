@@ -52,21 +52,79 @@ function installEnvironment() {
         };
       }
       if (tag === "canvas") {
-        return {
+        const canvas = {
           width: 0,
           height: 0,
-          getContext() {
+          toBlob(callback) {
+            callback(new Blob(["canvas"], { type: "image/png" }));
+          },
+        };
+        const gl = {
+          canvas,
+          VERTEX_SHADER: 0x8b31,
+          FRAGMENT_SHADER: 0x8b30,
+          COMPILE_STATUS: 0x8b81,
+          LINK_STATUS: 0x8b82,
+          ARRAY_BUFFER: 0x8892,
+          STATIC_DRAW: 0x88e4,
+          FLOAT: 0x1406,
+          TEXTURE0: 0x84c0,
+          TEXTURE_2D: 0x0de1,
+          CLAMP_TO_EDGE: 0x812f,
+          LINEAR: 0x2601,
+          TEXTURE_WRAP_S: 0x2802,
+          TEXTURE_WRAP_T: 0x2803,
+          TEXTURE_MIN_FILTER: 0x2801,
+          TEXTURE_MAG_FILTER: 0x2800,
+          RGBA: 0x1908,
+          UNSIGNED_BYTE: 0x1401,
+          UNPACK_FLIP_Y_WEBGL: 0x9240,
+          TRIANGLE_STRIP: 0x0005,
+          COLOR_BUFFER_BIT: 0x4000,
+          createShader() { return {}; },
+          shaderSource() {},
+          compileShader() {},
+          getShaderParameter() { return true; },
+          getShaderInfoLog() { return ""; },
+          deleteShader() {},
+          createProgram() { return {}; },
+          attachShader() {},
+          linkProgram() {},
+          getProgramParameter() { return true; },
+          getProgramInfoLog() { return ""; },
+          deleteProgram() {},
+          viewport() {},
+          clearColor() {},
+          clear() {},
+          useProgram() {},
+          getAttribLocation(_program, name) { return name === "a_position" ? 0 : 1; },
+          getUniformLocation() { return 0; },
+          createBuffer() { return {}; },
+          bindBuffer() {},
+          bufferData() {},
+          enableVertexAttribArray() {},
+          vertexAttribPointer() {},
+          createTexture() { return {}; },
+          activeTexture() {},
+          bindTexture() {},
+          texParameteri() {},
+          pixelStorei() {},
+          texImage2D() {},
+          uniform1i() {},
+          drawArrays() {},
+          deleteBuffer() {},
+          deleteTexture() {},
+        };
+        canvas.getContext = function getContext(kind) {
+            if (kind === "webgl" || kind === "experimental-webgl") return gl;
             return {
               translate() {},
               rotate() {},
               drawImage() {},
               scale() {},
             };
-          },
-          toBlob(callback) {
-            callback(new Blob(["canvas"], { type: "image/png" }));
-          },
-        };
+          };
+        return canvas;
       }
       return {};
     },
@@ -157,7 +215,6 @@ test("runtimeHost remote mode emits job lifecycle events", async () => {
       baseURL: "https://upstream.example",
       textModelID: "gpt-5.5",
       imageModelID: "gpt-image-2",
-      transport: "auto",
       apiMode: "responses",
       noPromptRevision: false,
       concurrencyLimit: 0,
@@ -182,6 +239,102 @@ test("runtimeHost remote mode emits job lifecycle events", async () => {
     assert.ok(seen.result.length >= 1);
     assert.equal(seen.result[0].imageB64, "YWJj");
     assert.equal(seen.result[0].revisedPrompt, "rev");
+  });
+});
+
+test("runtimeHost Android transforms persist GPU-backed results to host files", async () => {
+  await withPatchedGlobals(async () => {
+    globalThis.createImageBitmap = async () => ({
+      width: 4,
+      height: 2,
+      close() {},
+    });
+    const calls = [];
+    globalThis.window.AndroidImageStudio = {
+      invoke(requestId, method, payloadJson) {
+        const args = JSON.parse(payloadJson);
+        calls.push({ method, args });
+        queueMicrotask(() => {
+          switch (method) {
+            case "ReadImageAsBase64":
+              window.__imageStudioNativeResolve?.(requestId, "YWJj");
+              break;
+            case "ImportImageFromB64":
+              window.__imageStudioNativeResolve?.(requestId, { path: "/sdcard/imports/gpu-rotated.png", imageB64: args[0] });
+              break;
+            default:
+              window.__imageStudioNativeReject?.(requestId, `unsupported ${method}`);
+          }
+        });
+      },
+    };
+  }, async () => {
+    const runtimeHost = await loadRuntimeHost();
+    const result = await runtimeHost.RotateImage("/sdcard/imports/source.png", 90);
+    assert.equal(result.path, "/sdcard/imports/gpu-rotated.png");
+    assert.equal(result.acceleration, "gpu-webgl");
+  });
+});
+
+test("runtimeHost windows fallback uses persisted GPU-backed transform when desktop native backend is unavailable", async () => {
+  await withPatchedGlobals(async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: {
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        platform: "Win32",
+        userAgentData: { platform: "Windows" },
+      },
+    });
+    globalThis.createImageBitmap = async () => ({
+      width: 5,
+      height: 3,
+      close() {},
+    });
+    globalThis.window.go = {
+      backend: {
+        Service: {
+          ReadImageAsBase64: async () => "YWJj",
+          ImportImageFromB64: async (_b64, _name) => ({ path: "C:/imports/flipped.png", imageB64: "YWJj" }),
+        },
+      },
+    };
+  }, async () => {
+    const runtimeHost = await loadRuntimeHost();
+    const result = await runtimeHost.FlipImage("C:/images/source.png", true);
+    assert.equal(result.path, "C:/imports/flipped.png");
+    assert.equal(result.acceleration, "gpu-webgl");
+  });
+});
+
+test("runtimeHost linux fallback uses persisted GPU-backed transform when desktop native backend is unavailable", async () => {
+  await withPatchedGlobals(async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: {
+        userAgent: "Mozilla/5.0 (X11; Linux x86_64)",
+        platform: "Linux x86_64",
+        userAgentData: { platform: "Linux" },
+      },
+    });
+    globalThis.createImageBitmap = async () => ({
+      width: 6,
+      height: 4,
+      close() {},
+    });
+    globalThis.window.go = {
+      backend: {
+        Service: {
+          ReadImageAsBase64: async () => "YWJj",
+          ImportImageFromB64: async (_b64, _name) => ({ path: "/tmp/imports/cropped.png", imageB64: "YWJj" }),
+        },
+      },
+    };
+  }, async () => {
+    const runtimeHost = await loadRuntimeHost();
+    const result = await runtimeHost.CropImage("/tmp/images/source.png", 1, 1, 3, 2);
+    assert.equal(result.path, "/tmp/imports/cropped.png");
+    assert.equal(result.acceleration, "gpu-webgl");
   });
 });
 
@@ -212,7 +365,6 @@ test("runtimeHost remote cancel aborts pending remote jobs", async () => {
       baseURL: "https://upstream.example",
       textModelID: "gpt-5.5",
       imageModelID: "gpt-image-2",
-      transport: "auto",
       apiMode: "responses",
       noPromptRevision: false,
       concurrencyLimit: 0,

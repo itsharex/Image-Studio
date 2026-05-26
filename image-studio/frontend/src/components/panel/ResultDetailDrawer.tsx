@@ -94,7 +94,6 @@ export function ResultDetailDrawer() {
             {detail.styleTag ? <Kv label="风格" value={`#${detail.styleTag}`} /> : null}
             {typeof detail.elapsedSec === "number" ? <Kv label="耗时" value={`${detail.elapsedSec.toFixed(1)}s`} /> : null}
             <Kv label="创建时间" value={created} />
-            {detail.transport ? <Kv label="通道" value={detail.transport} /> : null}
           </Section>
 
           <Section title="原始提示词">

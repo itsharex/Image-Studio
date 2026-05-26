@@ -94,7 +94,6 @@ export function FAQModal({ open, onClose }: { open: boolean; onClose: () => void
           </p>
           <ul>
             <li>检查 key 是否过期 / 余额是否充足 / 是否绑对了分组(见第一条)</li>
-            <li>试试切换网络通道:「设置 → 网络通道」改成 <code>curl</code> 让请求走系统 curl,有时能绕过原生 HTTP 的 TLS 问题;新版本不会再把 API Key 暴露到 curl 命令行参数里</li>
             <li>查看历史项右键「📄 查看 raw 响应」看上游具体返回了什么</li>
           </ul>
         </details>

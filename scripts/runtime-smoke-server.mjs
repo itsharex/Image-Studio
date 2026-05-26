@@ -25,7 +25,6 @@ const injected = `
   const now = Date.now();
   localStorage.setItem("gptcodex.theme", "dark");
   localStorage.setItem("gptcodex.fontScale", "1");
-  localStorage.setItem("gptcodex.transport", "auto");
   localStorage.setItem("gptcodex.kernelRuntimeMode", "remote");
   localStorage.setItem("gptcodex.outputFormat", "png");
   localStorage.setItem("gptcodex.profiles", JSON.stringify([{

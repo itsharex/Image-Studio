@@ -231,7 +231,6 @@ const workerResponses = await requestText(`${workerOrigin}/v1/responses`, {
     baseURL: upstreamBaseURL,
     textModelID,
     imageModelID,
-    transport: "auto",
     apiMode: "responses",
     noPromptRevision: false,
   }),

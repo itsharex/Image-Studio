@@ -30,7 +30,6 @@ export interface UpstreamProfile {
 
 export type SizeValue = "auto" | "1024x1024" | "1536x1024" | "1024x1536" | "2048x1152" | "1152x2048";
 export type QualityValue = "auto" | "high" | "medium" | "low";
-export type TransportKind = "auto" | "native" | "curl";
 export type KernelRuntimeMode = "auto" | "local" | "remote";
 // 让上游做编码;落盘扩展名 jpeg → .jpg,其他原样。
 export type OutputFormatValue = "png" | "jpeg" | "webp";
@@ -96,7 +95,6 @@ export interface HistoryItem {
   seed?: number;
   negativePrompt?: string;
   styleTag?: string;
-  transport?: TransportKind;
   elapsedSec?: number;     // generation duration in seconds
 
   savedPath?: string;
@@ -149,7 +147,6 @@ export interface Preset {
   quality: QualityValue;
   outputFormat?: OutputFormatValue;
   negativePrompt: string;
-  transport: TransportKind;
   kernelRuntimeMode?: KernelRuntimeMode;
   batchCount: number;
 }

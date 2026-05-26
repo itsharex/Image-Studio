@@ -117,7 +117,6 @@ function sanitizePayload(input) {
     baseURL: String(input?.baseURL || ""),
     textModelID: String(input?.textModelID || ""),
     imageModelID: String(input?.imageModelID || ""),
-    transport: String(input?.transport || ""),
     apiMode: String(input?.apiMode || ""),
     noPromptRevision: !!input?.noPromptRevision,
   };

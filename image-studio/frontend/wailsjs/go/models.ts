@@ -15,7 +15,6 @@ export namespace backend {
 	    baseURL: string;
 	    textModelID: string;
 	    imageModelID: string;
-	    transport: string;
 	    apiMode: string;
 	    noPromptRevision: boolean;
 	    concurrencyLimit: number;
@@ -40,7 +39,6 @@ export namespace backend {
 	        this.baseURL = source["baseURL"];
 	        this.textModelID = source["textModelID"];
 	        this.imageModelID = source["imageModelID"];
-	        this.transport = source["transport"];
 	        this.apiMode = source["apiMode"];
 	        this.noPromptRevision = source["noPromptRevision"];
 	        this.concurrencyLimit = source["concurrencyLimit"];
@@ -48,6 +46,7 @@ export namespace backend {
 	}
 	export class ImageTransformResult {
 	    path: string;
+	    acceleration?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new ImageTransformResult(source);
@@ -56,6 +55,7 @@ export namespace backend {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
+	        this.acceleration = source["acceleration"];
 	    }
 	}
 	export class ImportedImage {

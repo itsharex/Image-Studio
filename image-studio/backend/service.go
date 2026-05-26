@@ -279,7 +279,6 @@ func (s *Service) runJob(ctx context.Context, jobID string, opts GenerateOptions
 		BaseURL:          opts.BaseURL,
 		TextModelID:      opts.TextModelID,
 		ImageModelID:     opts.ImageModelID,
-		Transport:        client.TransportKind(opts.Transport),
 		APIMode:          apiMode,
 		NoPromptRevision: opts.NoPromptRevision,
 	}
@@ -307,7 +306,7 @@ func (s *Service) runJob(ctx context.Context, jobID string, opts GenerateOptions
 		}
 	}
 
-	transport, err := client.PickTransport(clientOpts.Transport)
+	transport, err := client.PickTransport()
 	if err != nil {
 		s.emitError(jobID, err)
 		return

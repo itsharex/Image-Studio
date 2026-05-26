@@ -24,6 +24,8 @@ type VirtualTextRecord = {
 type ImportedImageRecord = {
   path: string;
   imageB64: string;
+  mimeType?: string;
+  name?: string;
 };
 
 type SelectedImageRecord = {
@@ -99,7 +101,7 @@ export function registerVirtualImage(input: {
     imageB64: input.imageB64,
     mimeType,
   });
-  return { path, imageB64: input.imageB64 };
+  return { path, imageB64: input.imageB64, mimeType, name: suggestedName };
 }
 
 export function readVirtualImageAsBase64(path: string): string {
@@ -229,37 +231,288 @@ async function canvasToRegisteredImage(
   });
 }
 
-export async function rotateVirtualImage(path: string, degrees: number): Promise<ImportedImageRecord> {
+type GPUCanvas2DResult = {
+  canvas: HTMLCanvasElement;
+  acceleration: string;
+};
+
+function createWebGLCanvas(width: number, height: number): WebGLRenderingContext | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const webgl = canvas.getContext("webgl", {
+    premultipliedAlpha: false,
+    preserveDrawingBuffer: true,
+    antialias: false,
+    depth: false,
+    stencil: false,
+  });
+  if (webgl) return webgl as WebGLRenderingContext;
+  const experimental = canvas.getContext("experimental-webgl", {
+    premultipliedAlpha: false,
+    preserveDrawingBuffer: true,
+    antialias: false,
+    depth: false,
+    stencil: false,
+  } as WebGLContextAttributes);
+  return experimental as WebGLRenderingContext | null;
+}
+
+function compileShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
+  const shader = gl.createShader(type);
+  if (!shader) throw new Error("无法创建 WebGL shader");
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const message = gl.getShaderInfoLog(shader) || "unknown shader compile error";
+    gl.deleteShader(shader);
+    throw new Error(`WebGL shader 编译失败: ${message}`);
+  }
+  return shader;
+}
+
+function buildWebGLProgram(gl: WebGLRenderingContext): WebGLProgram {
+  const vert = compileShader(gl, gl.VERTEX_SHADER, `
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
+      v_texCoord = a_texCoord;
+    }
+  `);
+  const frag = compileShader(gl, gl.FRAGMENT_SHADER, `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    uniform sampler2D u_texture;
+    void main() {
+      gl_FragColor = texture2D(u_texture, v_texCoord);
+    }
+  `);
+  const program = gl.createProgram();
+  if (!program) throw new Error("无法创建 WebGL program");
+  gl.attachShader(program, vert);
+  gl.attachShader(program, frag);
+  gl.linkProgram(program);
+  gl.deleteShader(vert);
+  gl.deleteShader(frag);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    const message = gl.getProgramInfoLog(program) || "unknown program link error";
+    gl.deleteProgram(program);
+    throw new Error(`WebGL program 链接失败: ${message}`);
+  }
+  return program;
+}
+
+function drawBitmapWithWebGL(
+  bitmap: ImageBitmap,
+  outWidth: number,
+  outHeight: number,
+  texCoords: Float32Array,
+): GPUCanvas2DResult {
+  const gl = createWebGLCanvas(outWidth, outHeight);
+  if (!gl) {
+    throw new Error("WebGL 不可用");
+  }
+  const canvas = gl.canvas as HTMLCanvasElement;
+  const program = buildWebGLProgram(gl);
+  gl.viewport(0, 0, outWidth, outHeight);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(program);
+
+  const positionLoc = gl.getAttribLocation(program, "a_position");
+  const texCoordLoc = gl.getAttribLocation(program, "a_texCoord");
+  const textureLoc = gl.getUniformLocation(program, "u_texture");
+  const positions = new Float32Array([
+    -1, -1,
+     1, -1,
+    -1,  1,
+     1,  1,
+  ]);
+
+  const posBuffer = gl.createBuffer();
+  const texBuffer = gl.createBuffer();
+  const texture = gl.createTexture();
+  if (!posBuffer || !texBuffer || !texture || textureLoc == null) {
+    throw new Error("WebGL 资源创建失败");
+  }
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(positionLoc);
+  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(texCoordLoc);
+  gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+  gl.uniform1i(textureLoc, 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  gl.deleteBuffer(posBuffer);
+  gl.deleteBuffer(texBuffer);
+  gl.deleteTexture(texture);
+  gl.deleteProgram(program);
+  return { canvas, acceleration: "gpu-webgl" };
+}
+
+function noteGPUFallback(stage: string, error: unknown) {
+  try {
+    const target = globalThis as typeof globalThis & {
+      __imageStudioGPUFallbacks?: Array<{ stage: string; message: string }>;
+    };
+    const message = String((error as any)?.message || error || "unknown");
+    target.__imageStudioGPUFallbacks = target.__imageStudioGPUFallbacks || [];
+    target.__imageStudioGPUFallbacks.push({ stage, message });
+  } catch {
+    // ignore diagnostics failures
+  }
+}
+
+function rotateTexCoords(degrees: number): Float32Array {
+  switch (((degrees % 360) + 360) % 360) {
+    case 90:
+      return new Float32Array([
+        0, 0,
+        0, 1,
+        1, 0,
+        1, 1,
+      ]);
+    case 180:
+      return new Float32Array([
+        1, 0,
+        0, 0,
+        1, 1,
+        0, 1,
+      ]);
+    case 270:
+      return new Float32Array([
+        1, 1,
+        1, 0,
+        0, 1,
+        0, 0,
+      ]);
+    default:
+      return new Float32Array([
+        0, 1,
+        1, 1,
+        0, 0,
+        1, 0,
+      ]);
+  }
+}
+
+function flipTexCoords(horizontal: boolean): Float32Array {
+  return horizontal
+    ? new Float32Array([
+        1, 1,
+        0, 1,
+        1, 0,
+        0, 0,
+      ])
+    : new Float32Array([
+        0, 0,
+        1, 0,
+        0, 1,
+        1, 1,
+      ]);
+}
+
+function cropTexCoords(bitmap: ImageBitmap, left: number, top: number, width: number, height: number): Float32Array {
+  const u0 = left / bitmap.width;
+  const u1 = (left + width) / bitmap.width;
+  const vTop = top / bitmap.height;
+  const vBottom = (top + height) / bitmap.height;
+  return new Float32Array([
+    u0, vBottom,
+    u1, vBottom,
+    u0, vTop,
+    u1, vTop,
+  ]);
+}
+
+async function rotateBitmapWithGPU(bitmap: ImageBitmap, degrees: number): Promise<GPUCanvas2DResult> {
+  const normalized = ((degrees % 360) + 360) % 360;
+  const swap = normalized === 90 || normalized === 270;
+  return drawBitmapWithWebGL(
+    bitmap,
+    swap ? bitmap.height : bitmap.width,
+    swap ? bitmap.width : bitmap.height,
+    rotateTexCoords(normalized),
+  );
+}
+
+async function flipBitmapWithGPU(bitmap: ImageBitmap, horizontal: boolean): Promise<GPUCanvas2DResult> {
+  return drawBitmapWithWebGL(bitmap, bitmap.width, bitmap.height, flipTexCoords(horizontal));
+}
+
+async function cropBitmapWithGPU(
+  bitmap: ImageBitmap,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): Promise<GPUCanvas2DResult> {
+  return drawBitmapWithWebGL(bitmap, width, height, cropTexCoords(bitmap, left, top, width, height));
+}
+
+export async function rotateVirtualImage(path: string, degrees: number): Promise<ImportedImageRecord & { acceleration?: string }> {
   const { record, bitmap } = await loadRecordBitmap(path);
   try {
     const normalized = ((degrees % 360) + 360) % 360;
-    const swap = normalized === 90 || normalized === 270;
-    const canvas = document.createElement("canvas");
-    canvas.width = swap ? bitmap.height : bitmap.width;
-    canvas.height = swap ? bitmap.width : bitmap.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("无法创建图像画布");
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((normalized * Math.PI) / 180);
-    ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
-    return canvasToRegisteredImage(canvas, record, record.name);
+    try {
+      const rendered = await rotateBitmapWithGPU(bitmap, normalized);
+      const result = await canvasToRegisteredImage(rendered.canvas, record, record.name);
+      return { ...result, acceleration: rendered.acceleration };
+    } catch (error) {
+      noteGPUFallback("rotate", error);
+      const swap = normalized === 90 || normalized === 270;
+      const canvas = document.createElement("canvas");
+      canvas.width = swap ? bitmap.height : bitmap.width;
+      canvas.height = swap ? bitmap.width : bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("无法创建图像画布");
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((normalized * Math.PI) / 180);
+      ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+      const result = await canvasToRegisteredImage(canvas, record, record.name);
+      return { ...result, acceleration: "cpu-canvas" };
+    }
   } finally {
     bitmap.close();
   }
 }
 
-export async function flipVirtualImage(path: string, horizontal: boolean): Promise<ImportedImageRecord> {
+export async function flipVirtualImage(path: string, horizontal: boolean): Promise<ImportedImageRecord & { acceleration?: string }> {
   const { record, bitmap } = await loadRecordBitmap(path);
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("无法创建图像画布");
-    ctx.translate(horizontal ? canvas.width : 0, horizontal ? 0 : canvas.height);
-    ctx.scale(horizontal ? -1 : 1, horizontal ? 1 : -1);
-    ctx.drawImage(bitmap, 0, 0);
-    return canvasToRegisteredImage(canvas, record, record.name);
+    try {
+      const rendered = await flipBitmapWithGPU(bitmap, horizontal);
+      const result = await canvasToRegisteredImage(rendered.canvas, record, record.name);
+      return { ...result, acceleration: rendered.acceleration };
+    } catch (error) {
+      noteGPUFallback("flip", error);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("无法创建图像画布");
+      ctx.translate(horizontal ? canvas.width : 0, horizontal ? 0 : canvas.height);
+      ctx.scale(horizontal ? -1 : 1, horizontal ? 1 : -1);
+      ctx.drawImage(bitmap, 0, 0);
+      const result = await canvasToRegisteredImage(canvas, record, record.name);
+      return { ...result, acceleration: "cpu-canvas" };
+    }
   } finally {
     bitmap.close();
   }
@@ -271,20 +524,28 @@ export async function cropVirtualImage(
   y: number,
   width: number,
   height: number,
-): Promise<ImportedImageRecord> {
+): Promise<ImportedImageRecord & { acceleration?: string }> {
   const { record, bitmap } = await loadRecordBitmap(path);
   try {
     const left = Math.max(0, Math.min(bitmap.width, Math.round(x)));
     const top = Math.max(0, Math.min(bitmap.height, Math.round(y)));
     const cropWidth = Math.max(1, Math.min(bitmap.width - left, Math.round(width)));
     const cropHeight = Math.max(1, Math.min(bitmap.height - top, Math.round(height)));
-    const canvas = document.createElement("canvas");
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("无法创建图像画布");
-    ctx.drawImage(bitmap, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-    return canvasToRegisteredImage(canvas, record, record.name);
+    try {
+      const rendered = await cropBitmapWithGPU(bitmap, left, top, cropWidth, cropHeight);
+      const result = await canvasToRegisteredImage(rendered.canvas, record, record.name);
+      return { ...result, acceleration: rendered.acceleration };
+    } catch (error) {
+      noteGPUFallback("crop", error);
+      const canvas = document.createElement("canvas");
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("无法创建图像画布");
+      ctx.drawImage(bitmap, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      const result = await canvasToRegisteredImage(canvas, record, record.name);
+      return { ...result, acceleration: "cpu-canvas" };
+    }
   } finally {
     bitmap.close();
   }

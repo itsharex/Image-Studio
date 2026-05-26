@@ -93,15 +93,6 @@ const (
 	ModeEdit     Mode = "edit"
 )
 
-// TransportKind selects HTTP implementation.
-type TransportKind string
-
-const (
-	TransportAuto   TransportKind = "auto"
-	TransportNative TransportKind = "native"
-	TransportCurl   TransportKind = "curl"
-)
-
 // APIMode selects which upstream contract to use.
 //
 //   - APIModeResponses: 老路径,POST /v1/responses(OpenAI Responses API 形态)
@@ -170,7 +161,6 @@ type Options struct {
 	// 精修过 prompt、不想被二次发挥的场景。Images API 路径忽略此字段(本来就不重写)。
 	NoPromptRevision bool
 
-	Transport TransportKind // auto | native | curl
 }
 
 // EffectiveImageDataURLs returns the merged list, deduplicating empty entries.

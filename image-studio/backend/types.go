@@ -30,7 +30,6 @@ type GenerateOptions struct {
 	BaseURL        string `json:"baseURL"`        // overrides the default upstream URL
 	TextModelID    string `json:"textModelID"`    // overrides the default text model
 	ImageModelID   string `json:"imageModelID"`   // overrides the default image model
-	Transport      string `json:"transport"`      // "auto" | "native" | "curl"
 	APIMode        string `json:"apiMode"`        // "responses" (default) | "images"
 	// NoPromptRevision:true 时禁止 Responses API 文本模型改写 prompt;Images API 路径忽略。
 	NoPromptRevision bool `json:"noPromptRevision"`

@@ -7,7 +7,7 @@ import { useStudioStore } from "../../state/studioStore";
 import {
   GetOutputDir, OpenOutputDir, OpenExternalURL, ChooseOutputDir, SetOutputDir,
 } from "../../platform/runtime/host";
-import type { KernelRuntimeMode, TransportKind } from "../../types/domain";
+import type { KernelRuntimeMode } from "../../types/domain";
 import { Modal } from "../common/Modal";
 import { rememberTrustedOutputRoot } from "../../lib/storage";
 import { platformOutputRootLabel, platformRuntimeLabel } from "../../platform";
@@ -58,7 +58,6 @@ function PresetsRow() {
 
 export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const {
-    transport,
     kernelRuntimeMode,
     theme, fontScale,
     setField, setAPIKey,
@@ -125,22 +124,6 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     <>
       <Modal open={open} onClose={closeSettings} title="设置" width={540}>
         <div className={`flex flex-col ${androidTarget.isAndroid ? "gap-3" : "gap-3.5"}`}>
-          {/* 网络通道 */}
-          <Row label="网络通道">
-            <select
-              value={transport}
-              onChange={(e) => setField("transport", e.target.value as TransportKind)}
-              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-900 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
-            >
-              <option value="auto">auto(原生 HTTP)</option>
-              <option value="native">native(强制原生)</option>
-              <option value="curl">curl(子进程兜底)</option>
-            </select>
-            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-300">
-              如果遇到网络问题(Cloudflare TLS / 公司代理),试 curl
-            </p>
-          </Row>
-
           <Row label="内核执行">
             <select
               value={kernelRuntimeMode}

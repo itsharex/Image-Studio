@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 export type UIPlatform = "macos" | "windows" | "linux" | "ios" | "android" | "web";
 export type UITargetPlatform = UIPlatform | "android-pad";
 export type UIFamily = "apple" | "fluent" | "android" | "generic";
+export type AndroidWindowClass = "compact" | "medium" | "expanded";
 
 const ANDROID_MEDIUM_WIDTH_DP = 600;
 const ANDROID_EXPANDED_WIDTH_DP = 840;
+const ANDROID_METRICS_CACHE_KEY = "__imageStudioAndroidMetrics";
 
 function fromOverride(raw?: string): UITargetPlatform | null {
   switch ((raw ?? "").trim().toLowerCase()) {
@@ -36,10 +38,55 @@ function fromOverride(raw?: string): UITargetPlatform | null {
   }
 }
 
+function readTargetOverrideFromURL(): UITargetPlatform | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return fromOverride(params.get("target") ?? params.get("platform") ?? undefined);
+  } catch {
+    return null;
+  }
+}
+
+type AndroidBridgeMetrics = {
+  widthPx?: number;
+  heightPx?: number;
+  density?: number;
+  densityDpi?: number;
+  screenWidthDp?: number;
+  screenHeightDp?: number;
+  smallestScreenWidthDp?: number;
+  orientation?: string;
+};
+
+function readAndroidBridgeMetrics(): AndroidBridgeMetrics | null {
+  if (typeof window === "undefined") return null;
+  const cached = (window as Window & { [ANDROID_METRICS_CACHE_KEY]?: AndroidBridgeMetrics })[ANDROID_METRICS_CACHE_KEY];
+  if (cached) return cached;
+  const bridge = (window as Window & {
+    AndroidImageStudio?: { getDisplayMetricsJson?: () => string };
+    Android?: { getDisplayMetricsJson?: () => string };
+  }).AndroidImageStudio ?? (window as Window & {
+    AndroidImageStudio?: { getDisplayMetricsJson?: () => string };
+    Android?: { getDisplayMetricsJson?: () => string };
+  }).Android;
+  const raw = bridge?.getDisplayMetricsJson?.();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as AndroidBridgeMetrics;
+    (window as Window & { [ANDROID_METRICS_CACHE_KEY]?: AndroidBridgeMetrics })[ANDROID_METRICS_CACHE_KEY] = parsed;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 function detectRawTargetPlatform(): UITargetPlatform {
   const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+  const urlOverride = readTargetOverrideFromURL();
+  if (urlOverride) return urlOverride;
   const override = fromOverride(env?.VITE_TARGET_PLATFORM);
-  if (override && override !== "android") return override;
+  if (override) return override;
   if (typeof navigator === "undefined") return override ?? "web";
 
   const uaDataPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? "";
@@ -56,14 +103,50 @@ function detectRawTargetPlatform(): UITargetPlatform {
 }
 
 function detectAndroidAdaptiveTarget(): UITargetPlatform {
-  if (typeof window === "undefined") return "android";
-  const width = Math.max(0, window.innerWidth || 0);
-  const height = Math.max(0, window.innerHeight || 0);
-  const landscape = width >= height;
+  return androidWidthClassForViewport() === "compact" ? "android" : "android-pad";
+}
 
-  if (width >= ANDROID_EXPANDED_WIDTH_DP) return "android-pad";
-  if (width >= ANDROID_MEDIUM_WIDTH_DP && landscape) return "android-pad";
-  return "android";
+function androidWidthDpForViewport(): number {
+  if (typeof window === "undefined") return 0;
+  const bridgeMetrics = readAndroidBridgeMetrics();
+  const widthPx = Math.max(0, bridgeMetrics?.widthPx ?? window.innerWidth ?? 0);
+  const bridgeDensity = bridgeMetrics?.density;
+  const bridgeDensityFromDpi = bridgeMetrics?.densityDpi ? bridgeMetrics.densityDpi / 160 : undefined;
+  const density = Math.max(1, bridgeDensity ?? bridgeDensityFromDpi ?? window.devicePixelRatio ?? 1);
+  const widthDp = Math.max(0, bridgeMetrics?.screenWidthDp ?? widthPx / density);
+  return widthDp;
+}
+
+function androidHeightDpForViewport(): number {
+  if (typeof window === "undefined") return 0;
+  const bridgeMetrics = readAndroidBridgeMetrics();
+  const heightPx = Math.max(0, bridgeMetrics?.heightPx ?? window.innerHeight ?? 0);
+  const bridgeDensity = bridgeMetrics?.density;
+  const bridgeDensityFromDpi = bridgeMetrics?.densityDpi ? bridgeMetrics.densityDpi / 160 : undefined;
+  const density = Math.max(1, bridgeDensity ?? bridgeDensityFromDpi ?? window.devicePixelRatio ?? 1);
+  return Math.max(0, bridgeMetrics?.screenHeightDp ?? heightPx / density);
+}
+
+function androidOrientationForViewport(): "landscape" | "portrait" {
+  if (typeof window === "undefined") return "portrait";
+  const bridgeMetrics = readAndroidBridgeMetrics();
+  if (bridgeMetrics?.orientation === "landscape") return "landscape";
+  if (bridgeMetrics?.orientation === "portrait") return "portrait";
+  return androidWidthDpForViewport() >= androidHeightDpForViewport() ? "landscape" : "portrait";
+}
+
+function androidWindowClassFromDp(valueDp: number): AndroidWindowClass {
+  if (valueDp < ANDROID_MEDIUM_WIDTH_DP) return "compact";
+  if (valueDp < ANDROID_EXPANDED_WIDTH_DP) return "medium";
+  return "expanded";
+}
+
+function androidWidthClassForViewport(): AndroidWindowClass {
+  return androidWindowClassFromDp(androidWidthDpForViewport());
+}
+
+function androidHeightClassForViewport(): AndroidWindowClass {
+  return androidWindowClassFromDp(androidHeightDpForViewport());
 }
 
 function normalizeRuntimePlatform(value: UITargetPlatform): UIPlatform {
@@ -97,10 +180,16 @@ export function readRuntimePlatformState() {
   const target = targetPlatformForViewport();
   const platform = normalizeRuntimePlatform(target);
   const uiFamily = familyForTarget(target);
+  const androidWidthClass = platform === "android" ? androidWidthClassForViewport() : undefined;
+  const androidHeightClass = platform === "android" ? androidHeightClassForViewport() : undefined;
+  const androidOrientation = platform === "android" ? androidOrientationForViewport() : undefined;
   return {
     targetPlatform: target,
     platform,
     uiFamily,
+    androidWidthClass,
+    androidHeightClass,
+    androidOrientation,
     isAndroid: platform === "android",
     isAndroidPad: target === "android-pad",
     isAndroidPhone: target === "android",
@@ -130,6 +219,12 @@ export function applyPlatformAttributes(root: HTMLElement = document.documentEle
   root.dataset.platform = state.platform;
   root.dataset.targetPlatform = state.targetPlatform;
   root.dataset.uiFamily = state.uiFamily;
+  if (state.androidWidthClass) root.dataset.androidWindowWidth = state.androidWidthClass;
+  else delete root.dataset.androidWindowWidth;
+  if (state.androidHeightClass) root.dataset.androidWindowHeight = state.androidHeightClass;
+  else delete root.dataset.androidWindowHeight;
+  if (state.androidOrientation) root.dataset.androidOrientation = state.androidOrientation;
+  else delete root.dataset.androidOrientation;
 }
 
 export function useRuntimePlatform() {
@@ -139,6 +234,7 @@ export function useRuntimePlatform() {
     if (rawTargetPlatform !== "android") return;
 
     const update = () => {
+      delete (window as Window & { [ANDROID_METRICS_CACHE_KEY]?: AndroidBridgeMetrics })[ANDROID_METRICS_CACHE_KEY];
       applyPlatformAttributes();
       setState(readRuntimePlatformState());
     };

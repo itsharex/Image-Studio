@@ -146,7 +146,7 @@ androidComponents {
         val frontendTaskName = "sync${variant.name.replaceFirstChar { it.uppercaseChar() }}FrontendAssets"
         val frontendDist = frontendRoot.resolve("dist")
         val sharedAssetsDir = layout.projectDirectory.dir("src/main/assets/web")
-        val generatedAssetsDir = layout.buildDirectory.dir("generated/frontendAssets/${variant.name}/web")
+        val generatedAssetsDir = layout.buildDirectory.dir("generated/assets/${frontendTaskName}")
         val variantCapName = variant.name.replaceFirstChar { it.uppercaseChar() }
 
         val syncTask = tasks.register<SyncFrontendAssetsTask>(frontendTaskName) {

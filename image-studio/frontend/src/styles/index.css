@@ -180,6 +180,15 @@ button {
   font: inherit;
 }
 
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
 textarea,
 select,
 input[type="text"],
@@ -318,15 +327,15 @@ textarea {
   --accent: #006a60;
   --accent-2: #008577;
   --accent-soft: rgb(0 106 96 / 0.12);
-  --bg: #f8faf6;
-  --bg-2: #eef4ef;
+  --bg: #f7faf6;
+  --bg-2: #edf2ee;
   --panel: #ffffff;
-  --panel-2: #f0f5f0;
-  --surface: #f6fbf6;
-  --surface-2: #e6eee7;
-  --sidebar: #fbfdf8;
-  --inspector: #fbfdf8;
-  --toolbar: #fbfdf8;
+  --panel-2: #eef3ef;
+  --surface: #f3f7f3;
+  --surface-2: #e2e9e3;
+  --sidebar: #f8fbf7;
+  --inspector: #f8fbf7;
+  --toolbar: #f7faf6;
   --border: rgb(64 73 68 / 0.13);
   --border-2: rgb(64 73 68 / 0.22);
   --text: #191c1b;
@@ -335,8 +344,8 @@ textarea {
   --danger: #ba1a1a;
   --danger-soft: rgb(186 26 26 / 0.1);
   --success: #2f7d32;
-  --canvas-bg: #eef4ef;
-  --canvas-tile: #d7e2da;
+  --canvas-bg: #edf3ee;
+  --canvas-tile: #d6dfd8;
   --on-accent-soft: #004c43;
   --btn-secondary-bg: #edf3ee;
   --btn-secondary-bg-hover: #dfe8e2;
@@ -344,8 +353,8 @@ textarea {
   --tool-hover-text: #004c43;
   --error-text: #8c1d18;
   --error-border: rgb(186 26 26 / 0.22);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.05);
-  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.12), 0 6px 18px rgb(0 0 0 / 0.08);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 3px 8px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.1), 0 8px 18px rgb(0 0 0 / 0.06);
   --window-blur: blur(0px);
   --window-outline: transparent;
   --header-height: 64px;
@@ -364,14 +373,14 @@ textarea {
   --accent-2: #9bf2e8;
   --accent-soft: rgb(123 218 207 / 0.16);
   --bg: #101412;
-  --bg-2: #171d1a;
-  --panel: #1c211f;
-  --panel-2: #202623;
-  --surface: #202623;
+  --bg-2: #161b18;
+  --panel: #1b201d;
+  --panel-2: #1f2522;
+  --surface: #1f2522;
   --surface-2: #2a302d;
-  --sidebar: #181d1b;
-  --inspector: #181d1b;
-  --toolbar: #181d1b;
+  --sidebar: #161b18;
+  --inspector: #161b18;
+  --toolbar: #151a18;
   --border: rgb(218 230 224 / 0.1);
   --border-2: rgb(218 230 224 / 0.18);
   --text: #e1e4e1;
@@ -381,7 +390,7 @@ textarea {
   --danger-soft: rgb(255 180 171 / 0.12);
   --success: #8bd78d;
   --canvas-bg: #151a18;
-  --canvas-tile: #27302c;
+  --canvas-tile: #28312d;
   --on-accent-soft: #b7fff5;
   --btn-secondary-bg: #252b28;
   --btn-secondary-bg-hover: #303734;
@@ -389,8 +398,8 @@ textarea {
   --tool-hover-text: #b7fff5;
   --error-text: #ffdad6;
   --error-border: rgb(255 180 171 / 0.28);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.34), 0 2px 10px rgb(0 0 0 / 0.22);
-  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 22px rgb(0 0 0 / 0.28);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.28), 0 4px 12px rgb(0 0 0 / 0.18);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.36), 0 8px 20px rgb(0 0 0 / 0.24);
 }
 
 /* 老 data-theme 选择器映射到 .dark class,平滑过渡。 */
@@ -443,15 +452,15 @@ html.dark[data-ui-family="apple"] body {
 html[data-ui-family="android"] body {
   background-color: var(--bg);
   background-image:
-    linear-gradient(180deg, rgb(255 255 255 / 0.48), transparent 18rem),
-    linear-gradient(135deg, #f8faf6 0%, #eef4ef 54%, #f6f8f2 100%);
+    linear-gradient(180deg, rgb(255 255 255 / 0.34), transparent 16rem),
+    linear-gradient(135deg, #f7faf6 0%, #eef3ee 58%, #f6f8f4 100%);
   background-attachment: scroll;
 }
 
 html.dark[data-ui-family="android"] body {
   background-image:
-    linear-gradient(180deg, rgb(123 218 207 / 0.05), transparent 18rem),
-    linear-gradient(135deg, #101412 0%, #151a18 52%, #111712 100%);
+    linear-gradient(180deg, rgb(123 218 207 / 0.04), transparent 16rem),
+    linear-gradient(135deg, #101412 0%, #141916 54%, #101512 100%);
 }
 button, input, textarea, select { font-family: inherit; }
 
@@ -585,7 +594,7 @@ html[data-ui-family="android"] .platform-icon-btn,
 html[data-ui-family="android"] .platform-chip,
 html[data-ui-family="android"] .liquid-primary-button {
   border-radius: var(--control-radius);
-  min-height: 40px;
+  min-height: 44px;
   transition:
     background-color 140ms ease,
     border-color 140ms ease,

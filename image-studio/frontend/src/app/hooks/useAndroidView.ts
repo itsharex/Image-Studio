@@ -4,12 +4,12 @@ import type { AndroidView } from "../../platform/types";
 
 export function useAndroidView() {
   const { isAndroid, isAndroidPhone, isAndroidPad } = usePlatform();
-  const [androidView, setAndroidView] = useState<AndroidView>(isAndroidPhone ? "compose" : "canvas");
+  const [androidView, setAndroidView] = useState<AndroidView>("compose");
 
   useEffect(() => {
     if (!isAndroid) return;
     setAndroidView((current) => {
-      if (isAndroidPad) return current === "compose" ? "compose" : "canvas";
+      if (isAndroidPad) return current;
       return current === "history" ? "history" : "compose";
     });
   }, [isAndroid, isAndroidPad]);

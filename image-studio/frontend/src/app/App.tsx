@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
 import { WorkspaceBar } from "../components/layout/WorkspaceBar";
 import { FooterBar } from "../components/layout/FooterBar";
@@ -19,8 +18,10 @@ import { useStudioBootstrap } from "./hooks/useStudioBootstrap";
 export default function App() {
   const fullscreen = useStudioStore((state) => state.fullscreen);
   const importImageFile = useStudioStore((state) => state.importImageFile);
+  const settingsOpen = useStudioStore((state) => state.settingsOpen);
+  const openSettings = useStudioStore((state) => state.openSettings);
+  const closeSettings = useStudioStore((state) => state.closeSettings);
   const { isMac } = usePlatform();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const { androidView, setAndroidView } = useAndroidView();
   const { dragHover } = useGlobalImageImport(importImageFile);
 
@@ -31,7 +32,7 @@ export default function App() {
     <div className="app-root relative">
       <div className="liquid-ambient" aria-hidden="true" />
 
-      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+      <AppHeader onOpenSettings={openSettings} />
       <WorkspaceBar />
       <PlatformWorkspace
         fullscreen={fullscreen}
@@ -42,7 +43,7 @@ export default function App() {
       {dragHover ? <DropImportOverlay /> : null}
       <FooterBar />
       <UpstreamConfigGate />
-      <SettingsPanelGate open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsPanelGate open={settingsOpen} onClose={closeSettings} />
       <ResultDetailGate />
       <StarPromptGate />
     </div>

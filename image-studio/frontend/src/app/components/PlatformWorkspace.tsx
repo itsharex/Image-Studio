@@ -29,14 +29,16 @@ export function PlatformWorkspace({
   androidView: AndroidView;
   onChangeAndroidView: (value: AndroidView) => void;
 }) {
-  const { isAndroid, isAndroidPad } = usePlatform();
+  const { isAndroid, isAndroidPad, targetPlatform, androidWidthClass } = usePlatform();
 
   return (
     <Suspense fallback={<ShellFallback fullscreen={fullscreen} isAndroid={isAndroid} isAndroidPad={isAndroidPad} />}>
       {isAndroid ? (
         <AndroidShell
+          key={targetPlatform}
           fullscreen={fullscreen}
           isPad={isAndroidPad}
+          isExpandedPad={androidWidthClass === "expanded"}
           androidView={androidView}
           onChangeView={onChangeAndroidView}
         />

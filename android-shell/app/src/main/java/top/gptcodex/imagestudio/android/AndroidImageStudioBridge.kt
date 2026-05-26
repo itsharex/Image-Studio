@@ -1,9 +1,16 @@
 package top.gptcodex.imagestudio.android
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.provider.MediaStore
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -102,6 +109,10 @@ class AndroidImageStudioBridge(
                     cancelHttpRequest(args.optString(0))
                     null
                 }
+                "Vibrate" -> {
+                    vibrate(args.optLong(0, 50L))
+                    null
+                }
                 else -> throw UnsupportedOperationException("$method is not implemented in Android shell yet")
             }
             resolve(requestId, result)
@@ -151,7 +162,38 @@ class AndroidImageStudioBridge(
     }
 
     @JavascriptInterface
+    fun getDisplayMetricsJson(): String {
+        val dm = context.resources.displayMetrics
+        val config = context.resources.configuration
+        val widthPx = dm.widthPixels
+        val heightPx = dm.heightPixels
+        val orientation = when (config.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> "landscape"
+            Configuration.ORIENTATION_PORTRAIT -> "portrait"
+            else -> "undefined"
+        }
+        return JSONObject()
+            .put("widthPx", widthPx)
+            .put("heightPx", heightPx)
+            .put("density", dm.density.toDouble())
+            .put("densityDpi", dm.densityDpi)
+            .put("screenWidthDp", config.screenWidthDp)
+            .put("screenHeightDp", config.screenHeightDp)
+            .put("smallestScreenWidthDp", config.smallestScreenWidthDp)
+            .put("orientation", orientation)
+            .toString()
+    }
+
+    @JavascriptInterface
     fun openOutputDir(): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return "MediaStore"
+        }
         val dir = File(getOutputDir()).apply { mkdirs() }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", dir)
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -202,10 +244,51 @@ class AndroidImageStudioBridge(
     @JavascriptInterface
     fun saveImage(imageB64: String, suggestedName: String): String {
         val name = if (suggestedName.endsWith(".png", true)) suggestedName else "$suggestedName.png"
+        val bytes = Base64.decode(imageB64, Base64.DEFAULT)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "ImageStudio")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { output ->
+                    output.write(bytes)
+                }
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+                return uri.toString()
+            }
+        }
+
         val file = File(getOutputDir(), name)
         file.parentFile?.mkdirs()
-        file.writeBytes(Base64.decode(imageB64, Base64.DEFAULT))
+        file.writeBytes(bytes)
         return file.absolutePath
+    }
+
+    @JavascriptInterface
+    fun vibrate(milliseconds: Long) {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(milliseconds)
+        }
     }
 
     private fun runHttpRequestText(requestId: String, payload: JSONObject): Nothing {

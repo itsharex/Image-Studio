@@ -79,6 +79,7 @@ import {
 } from "../lib/profiles";
 import { base64ToBlob, blobToBase64, createPreviewBlob, getImageDimensionsFromBase64 } from "../lib/images";
 import { isMac, isWindows } from "../platform";
+import { readRuntimePlatformState } from "../platform";
 import { exportHistoryForPlatform, saveImageForPlatform } from "../platform/android/bridge";
 import {
   activeRuntimePatch,
@@ -425,13 +426,17 @@ interface StudioState {
   importHistory: () => Promise<void>;
   setTheme: (t: ThemeMode) => void;
   setFontScale: (v: number) => void;
+  settingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
   testAPIKey: () => Promise<void>;
   isTestingKey: boolean;
   isOptimizingPrompt: boolean;
   optimizePrompt: () => Promise<void>;
   // 上游配置弹窗状态。bootstrap 在 apiKey/baseURL 任一为空时自动置 true。
   upstreamModalOpen: boolean;
-  openUpstreamConfig: () => void;
+  upstreamReturnTarget: "app" | "settings";
+  openUpstreamConfig: (returnTarget?: "app" | "settings") => void;
   closeUpstreamConfig: () => void;
 
   // 首次成功生图后向用户索 GitHub Star 的引导弹窗。launchOneJob 在 result
@@ -653,11 +658,26 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   presets: [],
   theme: "system",
   fontScale: 1,
+  settingsOpen: false,
+  openSettings: () => set({ settingsOpen: true, upstreamModalOpen: false }),
+  closeSettings: () => set({ settingsOpen: false }),
   isTestingKey: false,
   isOptimizingPrompt: false,
   upstreamModalOpen: false,
-  openUpstreamConfig: () => set({ upstreamModalOpen: true }),
-  closeUpstreamConfig: () => set({ upstreamModalOpen: false }),
+  upstreamReturnTarget: "app",
+  openUpstreamConfig: (returnTarget = "app") => set({
+    upstreamModalOpen: true,
+    upstreamReturnTarget: returnTarget,
+    settingsOpen: false,
+  }),
+  closeUpstreamConfig: () => {
+    const { upstreamReturnTarget } = get();
+    set({
+      upstreamModalOpen: false,
+      settingsOpen: upstreamReturnTarget === "settings",
+      upstreamReturnTarget: "app",
+    });
+  },
   openStarPrompt: () => {
     if (isMac) return;
     set({ starPromptOpen: true, starPromptSource: "manual" });
@@ -828,7 +848,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           textModelID: "",
           imageModelID: "",
           apiMode: "responses",
-          upstreamModalOpen: true,
+          upstreamModalOpen: false,
+          settingsOpen: true,
+          upstreamReturnTarget: "settings",
         });
       }
     }
@@ -1347,6 +1369,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       errorRawPath: null,
       lastPayload: null,
     };
+    const runtimePlatform = readRuntimePlatformState();
+    const shouldAutoOpenSettings = runtimePlatform.isAndroid
+      ? false
+      : !activeProfile || !activeKey.trim() || !baseURL.trim();
     set({
       apiKey: activeKey, history: trimHistory(items), promptHistory, presets, theme, fontScale,
       apiMode, baseURL, textModelID, imageModelID, transport, kernelRuntimeMode, noPromptRevision,
@@ -1355,8 +1381,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       activeProfileId,
       workspaces: [initialWorkspace],
       activeWorkspaceId: wsId,
-      // 没 active profile 或 active profile 缺 key/baseURL → 弹首次配置。
-      upstreamModalOpen: !activeProfile || !activeKey.trim() || !baseURL.trim(),
+      // Android 走首页 hero 引导，不用启动即弹设置；桌面仍保留首次引导。
+      settingsOpen: shouldAutoOpenSettings,
+      upstreamModalOpen: false,
+      upstreamReturnTarget: shouldAutoOpenSettings ? "settings" : "app",
     });
   },
 

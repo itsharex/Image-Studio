@@ -14,11 +14,11 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
 
   return (
     <header
-      className={`drag-region sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border)] bg-[var(--toolbar)] backdrop-blur-2xl ${
+      className={`drag-region app-header sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border)] bg-[var(--toolbar)] backdrop-blur-2xl ${
         usesAppleUI ? "liquid-glass-bar" : ""
       } ${
         usesAndroidUI
-          ? "min-h-[64px] px-4 pt-[calc(env(safe-area-inset-top,0px)+6px)] pb-2"
+          ? "android-app-header min-h-[46px] px-[calc(env(safe-area-inset-left,0px)+14px)] pr-[calc(env(safe-area-inset-right,0px)+14px)] pt-[calc(env(safe-area-inset-top,0px)+2px)] pb-1"
           :
         usesAppleUI
           ? "min-h-[58px] pl-[92px] pr-5 pb-2 pt-3"
@@ -27,11 +27,11 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
             : "min-h-12 px-4"
       }`}
     >
-      <div className="min-w-0 flex-1">
+      <div className={`min-w-0 flex-1 ${usesAndroidUI ? "android-header-copy" : ""}`}>
         <div
-          className={`text-zinc-900 dark:text-zinc-100 ${
+          className={`android-header-title text-zinc-900 dark:text-zinc-100 ${
             isAndroidPhone
-              ? "text-[12px] font-semibold tracking-[0]"
+              ? "text-[10px] font-semibold tracking-[0]"
               : isAndroidPad
               ? "text-[15px] font-semibold tracking-[0]"
               : isWindows
@@ -42,6 +42,14 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
         >
           Image Studio
         </div>
+        {usesAndroidUI && !isAndroidPhone && (
+          <div className={`android-header-subtitle mt-0.5 flex min-w-0 items-center gap-2 text-zinc-500 dark:text-zinc-400 ${
+            isAndroidPhone ? "text-[9px]" : "text-[12px]"
+          }`}>
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+            <span className="truncate">{isAndroidPad ? "自适应大屏工作区" : "移动创作工作区"}</span>
+          </div>
+        )}
         {!isAndroid && !isMac && (
           <div className={`flex min-w-0 items-center text-zinc-500 dark:text-zinc-400 ${isWindows ? "mt-0 text-[10px]" : "mt-0.5 text-[11px]"}`}>
             <HitokotoStrip />
@@ -49,7 +57,7 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
         )}
       </div>
 
-      <div className={`no-drag ml-auto flex items-center ${isWindows ? "gap-1" : "gap-1.5"}`}>
+      <div className={`no-drag ml-auto flex items-center shrink-0 ${usesAndroidUI ? "android-header-actions" : ""} ${isWindows ? "gap-1" : "gap-1.5"}`}>
         {!isAndroid && <HeaderIconBtn
           onClick={() => newWorkspace()}
           title={workspaces.length > 1 ? `${workspaces.length} 个标签 · 新建` : "新建标签"}
@@ -116,14 +124,18 @@ function HeaderIconBtn({ children, onClick, title }: {
   onClick: () => void;
   title: string;
 }) {
-  const { isWindows } = usePlatform();
+  const { isWindows, usesAndroidUI } = usePlatform();
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
       className={`platform-icon-btn no-drag relative flex items-center justify-center text-zinc-600 transition-colors hover:bg-black/[0.05] hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.06] dark:hover:text-zinc-100 ${
-        isWindows ? "h-8 w-8 rounded-[8px]" : "h-8 w-8 rounded-full"
+        usesAndroidUI
+          ? "h-10 w-10 rounded-full border border-black/[0.06] bg-[var(--surface)] dark:border-white/[0.08] dark:bg-white/[0.05]"
+          : isWindows
+          ? "h-8 w-8 rounded-[8px]"
+          : "h-8 w-8 rounded-full"
       }`}
     >
       {children}

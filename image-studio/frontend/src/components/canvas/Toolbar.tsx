@@ -1,5 +1,6 @@
+import { useState } from "react";
 import {
-  ArrowUp, Brush, Crop, Eraser, FlipHorizontal, FlipVertical, Hand,
+  Brush, Crop, Eraser, FlipHorizontal, FlipVertical, Hand,
   Info, MoveRight, Pencil, RotateCcw, RotateCw, Save, Square,
   Trash2, Maximize, Minimize, Type as TypeIcon,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export function Toolbar() {
   } = useStudioStore();
   const selRect = annotations.find((a) => a.id === selectedAnnotationId && a.kind === "rect");
   const { isAndroidPhone, isMac, isWindows, usesAppleUI } = usePlatform();
+  const [mobileAdjustOpen, setMobileAdjustOpen] = useState(false);
   const hasImage = !!currentImage;
   const showBatchGridToggle = batchResults.length > 1;
   if (isMac && !hasImage && !showBatchGridToggle) return null;
@@ -129,18 +131,35 @@ export function Toolbar() {
       {currentImage && (
         <>
           {!isAndroidPhone && <Sep />}
-          <ToolBtn onClick={() => rotateCurrent(-90)} disabled={!currentImage.savedPath} title="左转 90°">
-            <RotateCcw className="w-3.5 h-3.5" />
-          </ToolBtn>
-          <ToolBtn onClick={() => rotateCurrent(90)} disabled={!currentImage.savedPath} title="右转 90°">
-            <RotateCw className="w-3.5 h-3.5" />
-          </ToolBtn>
-          <ToolBtn onClick={() => flipCurrent(true)} disabled={!currentImage.savedPath} title="水平翻转">
-            <FlipHorizontal className="w-3.5 h-3.5" />
-          </ToolBtn>
-          <ToolBtn onClick={() => flipCurrent(false)} disabled={!currentImage.savedPath} title="竖直翻转">
-            <FlipVertical className="w-3.5 h-3.5" />
-          </ToolBtn>
+          {isAndroidPhone ? (
+            <button
+              type="button"
+              onClick={() => setMobileAdjustOpen((v) => !v)}
+              className={`px-2.5 py-1 text-[11px] transition-colors ${
+                mobileAdjustOpen
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "text-zinc-600 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] dark:text-zinc-400"
+              } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              title="旋转 / 翻转"
+            >
+              调整
+            </button>
+          ) : (
+            <>
+              <ToolBtn onClick={() => rotateCurrent(-90)} disabled={!currentImage.savedPath} title="左转 90°">
+                <RotateCcw className="w-3.5 h-3.5" />
+              </ToolBtn>
+              <ToolBtn onClick={() => rotateCurrent(90)} disabled={!currentImage.savedPath} title="右转 90°">
+                <RotateCw className="w-3.5 h-3.5" />
+              </ToolBtn>
+              <ToolBtn onClick={() => flipCurrent(true)} disabled={!currentImage.savedPath} title="水平翻转">
+                <FlipHorizontal className="w-3.5 h-3.5" />
+              </ToolBtn>
+              <ToolBtn onClick={() => flipCurrent(false)} disabled={!currentImage.savedPath} title="竖直翻转">
+                <FlipVertical className="w-3.5 h-3.5" />
+              </ToolBtn>
+            </>
+          )}
           {!isAndroidPhone && selRect && selRect.width && selRect.height && (
             <button
               onClick={() => cropToRect(selRect.x, selRect.y, selRect.width!, selRect.height!)}
@@ -150,10 +169,31 @@ export function Toolbar() {
               <Crop className="w-3.5 h-3.5" /> 裁出
             </button>
           )}
-        </>
-      )}
+          </>
+        )}
 
       <div className="ml-auto flex items-center gap-1">
+        {isAndroidPhone && mobileAdjustOpen && currentImage ? (
+          <div className="flex items-center gap-1 rounded-full bg-black/[0.03] px-1 py-0.5 dark:bg-white/[0.05]">
+            <ToolBtn onClick={() => rotateCurrent(-90)} disabled={!currentImage.savedPath} title="左转 90°">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => rotateCurrent(90)} disabled={!currentImage.savedPath} title="右转 90°">
+              <RotateCw className="w-3.5 h-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => flipCurrent(true)} disabled={!currentImage.savedPath} title="水平翻转">
+              <FlipHorizontal className="w-3.5 h-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => flipCurrent(false)} disabled={!currentImage.savedPath} title="竖直翻转">
+              <FlipVertical className="w-3.5 h-3.5" />
+            </ToolBtn>
+            {selRect && selRect.width && selRect.height ? (
+              <ToolBtn onClick={() => cropToRect(selRect.x, selRect.y, selRect.width!, selRect.height!)} title="裁出选中矩形">
+                <Crop className="w-3.5 h-3.5" />
+              </ToolBtn>
+            ) : null}
+          </div>
+        ) : null}
         {showBatchGridToggle && (
           <button
             onClick={resultGridOpen ? closeResultGrid : openResultGrid}
@@ -198,8 +238,6 @@ export function Toolbar() {
         )}
       </div>
 
-      {/* 防止未使用 import 报错 */}
-      <ArrowUp className="hidden" />
     </div>
   );
 }
@@ -211,18 +249,18 @@ function ToolBtn({ active, disabled, onClick, title, children }: {
   title?: string;
   children: React.ReactNode;
 }) {
-  const { isWindows } = usePlatform();
+  const { isWindows, usesAndroidUI } = usePlatform();
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`platform-icon-btn flex h-8 w-8 items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+      className={`platform-icon-btn flex items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
         active
           ? "border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] text-[var(--accent)]"
           : "text-zinc-600 hover:bg-black/[0.04] hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.06] dark:hover:text-zinc-100"
-      } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+      } ${usesAndroidUI ? "h-12 w-12 rounded-[16px]" : isWindows ? "h-8 w-8 rounded-[8px]" : "h-8 w-8 rounded-full"}`}
     >
       {children}
     </button>

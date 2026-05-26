@@ -1,5 +1,5 @@
 import { Suspense, lazy, useDeferredValue, useMemo, useRef, useState } from "react";
-import { Clipboard, Copy, FileText, Info, ListRestart, Plug, RotateCw, Settings, Sparkles, Split, Trash2, X } from "lucide-react";
+import { Filter, Info, Split, X } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import type { HistoryItem, Mode } from "../../types/domain";
 import { ContextMenu, MenuItem } from "../common/ContextMenu";
@@ -26,18 +26,17 @@ export function HistoryRail() {
     history, currentImage, reuseAsSource, deleteHistoryItem, setField,
     compareB, setCompareB, pushToast, fullscreen,
     applyHistoryParams, regenerateFromHistory,
-    openResultDetail, apiKey, baseURL, apiMode,
-    profiles, activeProfileId, setActiveProfile,
-    openUpstreamConfig, testAPIKey, isTestingKey,
+    openResultDetail,
   } = useStudioStore();
 
   const [q, setQ] = useState("");
   const deferredQ = useDeferredValue(q);
   const [modeF, setModeF] = useState<ModeFilter>("all");
   const [dateF, setDateF] = useState<DateFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [menu, setMenu] = useState<{ x: number; y: number; h: HistoryItem } | null>(null);
   const [rawPath, setRawPath] = useState<string | null>(null);
-  const { isAndroidPhone, isMac, isWindows, usesAndroidUI, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, isAndroidPad, isMac, isWindows, usesAndroidUI, usesAppleUI } = usePlatform();
   // 防快速连点产生竞态:每次点击递增 epoch,后台 materialize 全图 resolve
   // 时跟当前 epoch 比对,过时的就丢弃。之前的写法是先 await 再 setField,
   // 慢的请求会在用户已经点了另一张图之后把画布盖回去。
@@ -54,6 +53,9 @@ export function HistoryRail() {
     });
   }, [history, deferredQ, modeF, dateF]);
   const showHistoryFilters = history.length > 4 || q.trim().length > 0 || modeF !== "all" || dateF !== "all";
+  const historyFiltersActive = q.trim().length > 0 || modeF !== "all" || dateF !== "all";
+  const showPhoneFilterToggle = isAndroidPhone && (history.length > 4 || historyFiltersActive);
+  const showFilterControls = !isAndroidPhone ? showHistoryFilters : (filtersOpen || historyFiltersActive);
 
   async function selectCurrent(h: HistoryItem) {
     const myEpoch = ++selectEpochRef.current;
@@ -117,98 +119,40 @@ export function HistoryRail() {
   if (fullscreen) return null;
 
   return (
-    <aside className={`history-rail flex w-[304px] shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI && !isAndroidPhone ? "android-surface-pane" : ""}`}>
-      <div className="mx-auto flex w-full max-w-[264px] flex-col gap-3">
-      <div className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-300">
-              上游
-            </h3>
-            <span className={`h-1.5 w-1.5 rounded-full ${apiKey && baseURL ? "bg-[var(--accent)] shadow-[0_0_6px_rgb(0_122_255_/_0.55)]" : "bg-red-500"}`} />
-            <span className={`text-[11px] ${apiKey && baseURL ? "text-[var(--accent)]" : "text-red-400"}`}>
-              {apiKey && baseURL ? "已配置" : "未配置"}
-            </span>
-          </div>
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">当前连接</span>
-        </div>
-
-        {/* v0.1.6: profile dropdown 替换原来的 [Responses | Images] 二选一 chip。
-            列表为空时 dropdown 隐藏,提示用户去「上游配置」建第一条。 */}
-        {profiles.length > 0 ? (
-          <div className="mt-3">
-            <select
-              value={activeProfileId}
-              onChange={(e) => {
-                const id = e.target.value;
-                if (id === "__manage__") {
-                  openUpstreamConfig();
-                  return;
-                }
-                if (id) void setActiveProfile(id);
-              }}
-              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-[12px] font-medium text-zinc-800 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
-              title="切换上游配置 / 管理"
-            >
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {p.apiMode === "responses" ? "Responses" : "Images"}
-                </option>
-              ))}
-              <option value="__manage__">⚙ 管理配置...</option>
-            </select>
-          </div>
-        ) : (
-          <p className="mt-3 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-300">
-            还没有上游配置，先建一条再开始生成。
-          </p>
-        )}
-
-        <div className={`mt-2 flex ${isAndroidPhone ? "gap-1" : "gap-1.5"}`}>
-          <button
-            onClick={openUpstreamConfig}
-            className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-[12px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
-          >
-            <Settings className="h-3.5 w-3.5" /> {isAndroidPhone ? "配置" : "上游配置"}
-          </button>
-          <button
-            onClick={testAPIKey}
-            disabled={!apiKey.trim() || !baseURL.trim() || isTestingKey}
-            title="验证当前配置是否可连通"
-            className={`platform-action-btn inline-flex items-center gap-1.5 border border-black/[0.08] px-3 text-[12px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
-          >
-            <Plug className={`h-3.5 w-3.5 ${isTestingKey ? "animate-spin" : ""}`} /> {isTestingKey ? "检查中..." : isAndroidPhone ? "连通性" : "测试"}
-          </button>
-        </div>
-
-        {!isAndroidPhone ? (
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="min-w-0 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-300">
-              {apiMode === "responses"
-                ? "Responses API"
-                : "Images API"}
-            </p>
-          </div>
-        ) : null}
-      </div>
-
-      <div className={`platform-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <aside className={`history-rail flex w-[304px] shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI && !isAndroidPhone ? "android-surface-pane" : ""} ${isAndroidPad ? "android-pad-history" : ""}`}>
+      <div className={`history-rail-stack ${isAndroidPad ? "android-pad-history-stack" : "history-rail-stack-compact"}`}>
+      <div className={`platform-card history-rail-summary-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-300">
             历史 <span className="font-mono-token text-zinc-500 dark:text-zinc-400">({filtered.length}{filtered.length !== history.length && `/${history.length}`})</span>
           </h3>
-          {currentImage && (
-            <button
-              onClick={() => setField("currentImage", null)}
-              title="清空画板(不删历史)"
-              className="text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)] dark:text-zinc-300"
-            >
-              {isAndroidPhone ? "清空" : "清空画板"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {showPhoneFilterToggle ? (
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((v) => !v)}
+                className={`platform-pill inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] transition-colors ${
+                  filtersOpen || historyFiltersActive
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[color:var(--accent)]/20"
+                    : "text-zinc-500 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] dark:text-zinc-300"
+                } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              >
+                <Filter className="h-3 w-3" /> 筛选
+              </button>
+            ) : null}
+            {currentImage && (
+              <button
+                onClick={() => setField("currentImage", null)}
+                title="清空画板(不删历史)"
+                className="text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)] dark:text-zinc-300"
+              >
+                {isAndroidPhone ? "清空" : "清空画板"}
+              </button>
+            )}
+          </div>
         </div>
 
-        {showHistoryFilters && (
+        {showFilterControls && (
           <>
             <input
               placeholder="搜索 prompt..."
@@ -241,7 +185,15 @@ export function HistoryRail() {
 
         {!isAndroidPhone && !isMac && (
           <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-300">
-            点击查看 · Shift+点击对比 · 双击设源图 · 右键更多
+            {isAndroidPad
+              ? "点缩略图查看，Shift 可对比，双击可设为源图。"
+              : "点击查看 · Shift+点击对比 · 双击设源图 · 右键更多"}
+          </p>
+        )}
+
+        {isAndroidPad && filtered.length > 0 && (
+          <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+            历史单独收纳，回溯参数、继续变体都从这里进入。
           </p>
         )}
       </div>
@@ -260,7 +212,7 @@ export function HistoryRail() {
           {q || modeF !== "all" || dateF !== "all" ? "没有匹配项" : "还没有结果"}
         </div>
       ) : (
-        <div className="grid w-full grid-cols-2 gap-2.5 place-content-start">
+        <div className={`history-rail-grid ${isAndroidPad ? "android-pad-history-grid" : "history-rail-grid-compact"}`}>
           {filtered.map((h) => (
             <HistoryTile
               key={h.id}
@@ -279,10 +231,6 @@ export function HistoryRail() {
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={buildMenu(menu.h)} onClose={() => setMenu(null)} />}
       {rawPath && <RawResponseModal path={rawPath} onClose={() => setRawPath(null)} />}
-      {/* 防止 lucide import 未使用警告 */}
-      <Clipboard className="hidden" /><Copy className="hidden" /><FileText className="hidden" />
-      <Info className="hidden" /><ListRestart className="hidden" /><RotateCw className="hidden" /><Sparkles className="hidden" />
-      <Trash2 className="hidden" />
       </div>
     </aside>
   );

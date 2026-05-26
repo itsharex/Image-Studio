@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Download, Folder, FolderEdit, Github, Info, KeyRound,
-  MessageSquare, Monitor, Moon, RotateCw, Sun, Trash2, Upload, X,
+  MessageSquare, Monitor, Moon, Plug, RotateCw, Settings, Sun, Trash2, Upload, X,
 } from "lucide-react";
 import { useStudioStore } from "../../state/studioStore";
 import {
@@ -63,14 +63,22 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     theme, fontScale,
     setField, setAPIKey,
     history,
+    profiles,
+    activeProfileId,
+    apiMode,
+    baseURL,
+    isTestingKey,
     exportHistory, importHistory,
     setTheme, setFontScale,
+    openUpstreamConfig,
+    testAPIKey,
     pushToast,
   } = useStudioStore();
 
   const [outputDir, setOutputDir] = useState("");
   const [aboutOpen, setAboutOpen] = useState(false);
   const { isWindows } = usePlatform();
+  const activeProfile = profiles.find((profile) => profile.id === activeProfileId) ?? null;
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +115,12 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     onClose();
   }
 
+  function openUpstreamManager() {
+    setAboutOpen(false);
+    onClose();
+    openUpstreamConfig("settings");
+  }
+
   return (
     <>
       <Modal open={open} onClose={closeSettings} title="设置" width={540}>
@@ -140,6 +154,41 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-300">
               桌面可切到 remote 验证与 Android / Worker 是否走同一套共享请求内核
             </p>
+          </Row>
+
+          <Row label="上游配置">
+            <div className="flex flex-col gap-2">
+              <div className={`rounded-[14px] border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 dark:border-white/[0.08] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-medium text-zinc-800 dark:text-zinc-100">
+                      {activeProfile?.name ?? "还没有可用配置"}
+                    </div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                      {activeProfile
+                        ? `${apiMode === "responses" ? "Responses API" : "Images API"} · ${baseURL || "未填写 BASE_URL"}`
+                        : "把 BASE_URL、API Key 和模型配置统一收在这里管理。"}
+                    </div>
+                  </div>
+                  <span className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${activeProfile && baseURL.trim() ? "bg-[var(--accent)]" : "bg-red-500"}`} />
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={openUpstreamManager}
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-[12px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                >
+                  <Settings className="w-3 h-3" /> 管理上游
+                </button>
+                <button
+                  onClick={testAPIKey}
+                  disabled={!activeProfile || !baseURL.trim() || isTestingKey}
+                  className={`inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-[12px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                >
+                  <Plug className={`w-3 h-3 ${isTestingKey ? "animate-spin" : ""}`} /> {isTestingKey ? "检查中..." : "测试连接"}
+                </button>
+              </div>
+            </div>
           </Row>
 
           {/* 输出目录 */}

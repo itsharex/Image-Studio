@@ -10,6 +10,8 @@
 ![wails](https://img.shields.io/badge/wails-v2-DF0000)
 ![platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey)
 
+> 🧪 **抢先测试版本**:想体验 main 分支最新但还没打 tag 的功能?到 [DR-lin-eng/Image-Studio Actions](https://github.com/DR-lin-eng/Image-Studio/actions) 找最近一次成功的 build 下载 artifact。这些是 CI 自动产出,未经稳定性验证,装在测试环境 / 重要数据另作备份。
+
 ---
 
 <p align="center">

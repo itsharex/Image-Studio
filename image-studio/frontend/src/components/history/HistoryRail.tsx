@@ -38,7 +38,7 @@ export function HistoryRail() {
   const [modeF, setModeF] = useState<ModeFilter>("all");
   const [dateF, setDateF] = useState<DateFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { isAndroidPhone, isAndroidPad, isMac, isWindows, usesAndroidUI, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, isAndroidPad, isMac, usesFluentUI, usesAndroidUI, usesAppleUI } = usePlatform();
   // 防快速连点产生竞态:每次点击递增 epoch,后台 materialize 全图 resolve
   // 时跟当前 epoch 比对,过时的就丢弃。之前的写法是先 await 再 setField,
   // 慢的请求会在用户已经点了另一张图之后把画布盖回去。
@@ -292,7 +292,7 @@ export function HistoryRail() {
   return (
     <aside className={`history-rail box-border flex w-[332px] shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--inspector)] px-4 py-4 backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI && !isAndroidPhone ? "android-surface-pane" : ""} ${isAndroidPad ? "android-pad-history" : ""}`}>
       <div className={`history-rail-stack ${isAndroidPad ? "android-pad-history-stack" : "history-rail-stack-compact"}`}>
-      <div className={`platform-card history-rail-summary-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${isWindows ? "rounded-[12px]" : "rounded-[20px]"}`}>
+      <div className={`platform-card history-rail-summary-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"}`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-200">
@@ -318,7 +318,7 @@ export function HistoryRail() {
                 }
                 if (id) void setActiveProfile(id);
               }}
-              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] font-medium text-zinc-800 dark:border-white/[0.08] dark:text-zinc-100 ${isWindows ? "rounded-[8px]" : "rounded-[16px]"}`}
+              className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] font-medium text-zinc-800 dark:border-white/[0.08] dark:text-zinc-100 ${usesFluentUI ? "rounded-[8px]" : "rounded-[16px]"}`}
               title="切换上游配置 / 管理"
             >
               {profiles.map((profile) => (
@@ -338,7 +338,7 @@ export function HistoryRail() {
           <div className={`mt-2 flex ${isAndroidPhone ? "gap-1" : "gap-1.5"} ${isMac ? "items-stretch" : ""}`}>
           <button
             onClick={() => openUpstreamConfig("app")}
-            className={`platform-action-btn flex-1 inline-flex min-h-[34px] items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : isMac ? "py-2.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            className={`platform-action-btn flex-1 inline-flex min-h-[34px] items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : isMac ? "py-2.5" : "py-2"} ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
           >
             上游配置
           </button>
@@ -346,7 +346,7 @@ export function HistoryRail() {
             onClick={testAPIKey}
             disabled={!apiKey.trim() || !baseURL.trim() || isTestingKey}
             title="验证当前配置是否可连通"
-            className={`platform-action-btn inline-flex min-h-[34px] min-w-[84px] items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : isMac ? "py-2.5" : "py-2"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            className={`platform-action-btn inline-flex min-h-[34px] min-w-[84px] items-center justify-center gap-1.5 border border-black/[0.08] px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isAndroidPhone ? "py-1.5" : isMac ? "py-2.5" : "py-2"} ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
           >
             {isTestingKey ? "检查中..." : isAndroidPhone ? "连通性" : "测试"}
           </button>
@@ -361,7 +361,7 @@ export function HistoryRail() {
         ) : null}
       </div>
 
-      <div className={`platform-card history-rail-summary-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${isWindows ? "rounded-[12px]" : "rounded-[20px]"}`}>
+      <div className={`platform-card history-rail-summary-card border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isAndroidPhone ? "p-2.5" : "p-3.5"} ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"}`}>
         <div className={`flex items-center justify-between ${isMac ? "gap-2.5" : "gap-2"}`}>
           <h3 className={`${isMac ? "text-[12px]" : "text-[11px]"} font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-200`}>
             历史 <span className="font-mono-token text-zinc-500 dark:text-zinc-400">({filtered.length}{filtered.length !== history.length && `/${history.length}`})</span>
@@ -375,7 +375,7 @@ export function HistoryRail() {
                   filtersOpen || historyFiltersActive
                     ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[color:var(--accent)]/20"
                     : "text-zinc-500 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] dark:text-zinc-300"
-                } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                } ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
               >
                 <Filter className="h-3 w-3" /> 筛选
               </button>
@@ -384,7 +384,7 @@ export function HistoryRail() {
               <button
                 type="button"
                 onClick={openHistoryTimeline}
-                className={`history-rail-header-btn platform-pill inline-flex min-h-[30px] items-center justify-center gap-1.5 ${isMac ? "min-w-[78px] px-2.5 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                className={`history-rail-header-btn platform-pill inline-flex min-h-[30px] items-center justify-center gap-1.5 ${isMac ? "min-w-[78px] px-2.5 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
               >
                 <GalleryVerticalEnd className="h-3 w-3" /> 更多
               </button>
@@ -393,7 +393,7 @@ export function HistoryRail() {
               <button
                 type="button"
                 onClick={() => setHistoryRailCollapsed(!historyRailCollapsed)}
-                className={`history-rail-header-btn platform-pill inline-flex min-h-[30px] items-center justify-center gap-1.5 ${isMac ? "min-w-[78px] px-2.5 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                className={`history-rail-header-btn platform-pill inline-flex min-h-[30px] items-center justify-center gap-1.5 ${isMac ? "min-w-[78px] px-2.5 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
               >
                 {historyRailCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 {historyRailCollapsed ? "展开" : "折叠"}
@@ -408,13 +408,13 @@ export function HistoryRail() {
               placeholder="搜索 prompt..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className={`focus-ring ${isAndroidPhone ? "mt-1.5" : "mt-3"} w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+              className={`focus-ring ${isAndroidPhone ? "mt-1.5" : "mt-3"} w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
             />
             <div className={`mt-2 flex ${isAndroidPhone ? "gap-1" : "gap-1.5"}`}>
               <select
                 value={modeF}
                 onChange={(e) => setModeF(e.target.value as ModeFilter)}
-                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2.5"} text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2.5"} text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
               >
                 <option value="all">全部模式</option>
                 <option value="generate">文生图</option>
@@ -423,7 +423,7 @@ export function HistoryRail() {
               <select
                 value={dateF}
                 onChange={(e) => setDateF(e.target.value as DateFilter)}
-                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2.5"} text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+                className={`focus-ring flex-1 border border-black/[0.08] bg-[var(--surface)] px-3 ${isAndroidPhone ? "py-1.5" : "py-2.5"} text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
               >
                 <option value="all">全部日期</option>
                 <option value="today">今天</option>
@@ -451,7 +451,7 @@ export function HistoryRail() {
       {compareB && (
         <button
           onClick={() => setCompareB(null)}
-          className={`platform-pill inline-flex items-center justify-center gap-1.5 border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] px-2.5 py-2 text-xs text-[var(--accent)] transition-colors hover:opacity-90 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-pill inline-flex items-center justify-center gap-1.5 border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] px-2.5 py-2 text-xs text-[var(--accent)] transition-colors hover:opacity-90 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <Split className="w-3 h-3" /> 退出对比
         </button>
@@ -464,7 +464,7 @@ export function HistoryRail() {
       ) : null}
 
       {historyRailCollapsed ? null : recentHistory.length === 0 ? (
-        <div className={`platform-card border border-black/[0.05] bg-white/70 text-center text-[12px] text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-zinc-300 ${isAndroidPhone ? "py-4" : "py-8"} ${isWindows ? "rounded-[12px]" : "rounded-[20px]"}`}>
+        <div className={`platform-card border border-black/[0.05] bg-white/70 text-center text-[12px] text-zinc-500 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-zinc-300 ${isAndroidPhone ? "py-4" : "py-8"} ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"}`}>
           {q || modeF !== "all" || dateF !== "all" ? "没有匹配项" : "还没有结果"}
         </div>
       ) : (

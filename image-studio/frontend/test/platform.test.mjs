@@ -5,7 +5,7 @@ const realWindow = globalThis.window;
 const realDocument = globalThis.document;
 const realNavigator = globalThis.navigator;
 
-function installPlatformEnv({ width, height, userAgent }) {
+function installPlatformEnv({ width, height, userAgent, platform = "Linux armv8l", uaDataPlatform = "Android" }) {
   globalThis.window = {
     innerWidth: width,
     innerHeight: height,
@@ -25,8 +25,8 @@ function installPlatformEnv({ width, height, userAgent }) {
     configurable: true,
     value: {
       userAgent,
-      platform: "Linux armv8l",
-      userAgentData: { platform: "Android" },
+      platform,
+      userAgentData: { platform: uaDataPlatform },
     },
   });
 }
@@ -98,5 +98,40 @@ test("Android expanded width portrait upgrades to pad target and applies attribu
     assert.equal(globalThis.document.documentElement.dataset.platform, "android");
     assert.equal(globalThis.document.documentElement.dataset.targetPlatform, "android-pad");
     assert.equal(globalThis.document.documentElement.dataset.uiFamily, "android");
+  });
+});
+
+test("Linux desktop shares the Fluent UI family", async () => {
+  await withPlatformEnv({
+    width: 1440,
+    height: 900,
+    platform: "Linux x86_64",
+    uaDataPlatform: "Linux",
+    userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+  }, async () => {
+    const platform = await loadPlatformModule();
+    platform.applyPlatformAttributes(globalThis.document.documentElement);
+    const state = platform.readRuntimePlatformState();
+    assert.equal(state.platform, "linux");
+    assert.equal(state.uiFamily, "fluent");
+    assert.equal(state.usesFluentUI, true);
+    assert.equal(globalThis.document.documentElement.dataset.uiFamily, "fluent");
+  });
+});
+
+test("macOS keeps the Apple UI family", async () => {
+  await withPlatformEnv({
+    width: 1440,
+    height: 900,
+    platform: "MacIntel",
+    uaDataPlatform: "macOS",
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_5) AppleWebKit/605.1.15",
+  }, async () => {
+    const platform = await loadPlatformModule();
+    const state = platform.readRuntimePlatformState();
+    assert.equal(state.platform, "macos");
+    assert.equal(state.uiFamily, "apple");
+    assert.equal(state.usesFluentUI, false);
+    assert.equal(state.usesAppleUI, true);
   });
 });

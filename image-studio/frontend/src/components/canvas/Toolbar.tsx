@@ -26,7 +26,7 @@ export function Toolbar() {
     openResultDetail,
   } = useStudioStore();
   const selRect = annotations.find((a) => a.id === selectedAnnotationId && a.kind === "rect");
-  const { isAndroidPhone, isMac, isWindows, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, isMac, usesFluentUI, usesAppleUI } = usePlatform();
   const [mobileAdjustOpen, setMobileAdjustOpen] = useState(false);
   const hasImage = !!currentImage;
   const showBatchGridToggle = batchResults.length > 1;

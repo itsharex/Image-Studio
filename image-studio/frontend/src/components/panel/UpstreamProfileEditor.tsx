@@ -36,7 +36,7 @@ export function UpstreamProfileEditor({
   onClose: () => void;
   onSaveAndClose: () => void | Promise<void>;
 }) {
-  const { isAndroidPhone, isWindows } = usePlatform();
+  const { isAndroidPhone, usesFluentUI } = usePlatform();
 
   return (
     <div className={`flex flex-col ${isAndroidPhone ? "gap-3" : "gap-3.5"}`}>
@@ -44,7 +44,7 @@ export function UpstreamProfileEditor({
         <button
           type="button"
           onClick={onOpenFAQ}
-          className={`inline-flex items-center gap-1 text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`inline-flex items-center gap-1 text-[11px] text-zinc-500 transition-colors hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <HelpCircle className="h-3.5 w-3.5" /> 接口说明
         </button>
@@ -56,7 +56,7 @@ export function UpstreamProfileEditor({
           value={draft.name}
           onChange={(e) => onPatchDraft({ name: e.target.value })}
           spellCheck={false}
-          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
         />
       </Field>
 
@@ -76,7 +76,7 @@ export function UpstreamProfileEditor({
                   active
                     ? "active border-[color:var(--accent)]/25 bg-[var(--accent-soft)] text-[var(--accent)]"
                     : "border-black/[0.08] text-zinc-700 hover:border-[color:var(--accent)]/30 dark:border-white/[0.06] dark:text-zinc-300"
-                } ${isWindows ? "rounded-[8px]" : "rounded-[14px]"}`}
+                } ${usesFluentUI ? "rounded-[8px]" : "rounded-[14px]"}`}
               >
                 <span className="text-[12px] font-semibold">{option.title}</span>
                 <span className={`text-[10px] ${active ? "text-[var(--accent)]/80" : "text-zinc-500"}`}>{option.sub}</span>
@@ -107,7 +107,7 @@ export function UpstreamProfileEditor({
                   active
                     ? "active border-[color:var(--accent)]/25 bg-[var(--accent-soft)] text-[var(--accent)]"
                     : "border-black/[0.08] text-zinc-700 hover:border-[color:var(--accent)]/30 dark:border-white/[0.06] dark:text-zinc-300"
-                } ${isWindows ? "rounded-[8px]" : "rounded-[14px]"}`}
+                } ${usesFluentUI ? "rounded-[8px]" : "rounded-[14px]"}`}
               >
                 <span className="text-[12px] font-semibold">{option.title}</span>
                 <span className={`text-[10px] ${active ? "text-[var(--accent)]/80" : "text-zinc-500"}`}>{option.sub}</span>
@@ -127,7 +127,7 @@ export function UpstreamProfileEditor({
           placeholder="https://your-relay.example.com"
           onChange={(e) => onPatchDraft({ baseURL: e.target.value })}
           spellCheck={false}
-          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
         />
         {baseURLError ? <Hint>{baseURLError}</Hint> : null}
         <Hint>
@@ -144,13 +144,13 @@ export function UpstreamProfileEditor({
             onChange={(e) => onChangeDraftKey(e.target.value)}
             spellCheck={false}
             autoComplete="off"
-            className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] py-2 pl-3 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+            className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] py-2 pl-3 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
           />
           <button
             type="button"
             onClick={onToggleShowKey}
             title={showKey ? "隐藏" : "显示"}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] ${isWindows ? "rounded-[6px]" : "rounded-full"}`}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[6px]" : "rounded-full"}`}
           >
             {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
@@ -166,7 +166,7 @@ export function UpstreamProfileEditor({
             placeholder="留空=默认 gpt-5.5"
             onChange={(e) => onPatchDraft({ textModelID: e.target.value })}
             spellCheck={false}
-            className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+            className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
           />
         </Field>
       ) : null}
@@ -178,7 +178,7 @@ export function UpstreamProfileEditor({
           placeholder="留空=默认 gpt-image-2"
           onChange={(e) => onPatchDraft({ imageModelID: e.target.value })}
           spellCheck={false}
-          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
         />
       </Field>
 
@@ -190,7 +190,7 @@ export function UpstreamProfileEditor({
           min={0}
           step={1}
           onChange={(e) => onPatchDraft({ concurrencyLimit: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
-          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+          className={`focus-ring w-full border border-black/[0.08] bg-[var(--surface)] px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 dark:border-white/[0.08] dark:text-zinc-100 dark:placeholder:text-zinc-500 font-mono-token ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
         />
         <Hint>0/留空 = 不限制。填正整数后,此 profile 跨所有标签页最多同时运行这么多任务。</Hint>
       </Field>
@@ -199,7 +199,7 @@ export function UpstreamProfileEditor({
         type="button"
         onClick={() => void onTest()}
         disabled={!canSave || isTestingKey}
-        className={`platform-action-btn w-full inline-flex items-center justify-center gap-2 border border-black/[0.08] px-3 py-2 text-sm text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+        className={`platform-action-btn w-full inline-flex items-center justify-center gap-2 border border-black/[0.08] px-3 py-2 text-sm text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
       >
         <Plug className={`h-3.5 w-3.5 ${isTestingKey ? "animate-spin" : ""}`} />
         {isTestingKey ? "测试中..." : "保存并测试连接"}
@@ -209,7 +209,7 @@ export function UpstreamProfileEditor({
         <button
           type="button"
           onClick={onClose}
-          className={`platform-action-btn border border-black/[0.08] px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-black/[0.04] dark:border-white/[0.08] dark:text-zinc-300 dark:hover:bg-white/[0.06] ${isAndroidPhone ? "flex-1 rounded-full" : isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-action-btn border border-black/[0.08] px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-black/[0.04] dark:border-white/[0.08] dark:text-zinc-300 dark:hover:bg-white/[0.06] ${isAndroidPhone ? "flex-1 rounded-full" : usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           关闭
         </button>
@@ -217,7 +217,7 @@ export function UpstreamProfileEditor({
           type="button"
           onClick={() => void onSaveAndClose()}
           disabled={!canSave}
-          className={`liquid-primary-button bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 dark:disabled:bg-zinc-800 ${isAndroidPhone ? "flex-[1.2] rounded-full" : isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`liquid-primary-button bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 dark:disabled:bg-zinc-800 ${isAndroidPhone ? "flex-[1.2] rounded-full" : usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           保存
         </button>
@@ -226,7 +226,7 @@ export function UpstreamProfileEditor({
       {!canSave ? <p className="text-[11px] text-zinc-500">BASE_URL 和 API Key 必须填齐才能保存。</p> : null}
 
       {draft.apiMode === "images" ? (
-        <div className={`${usesAppleUI ? "liquid-glass-panel" : ""} flex items-start gap-2 border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] px-3 py-2 text-[11px] text-[var(--accent)] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+        <div className={`${usesAppleUI ? "liquid-glass-panel" : ""} flex items-start gap-2 border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] px-3 py-2 text-[11px] text-[var(--accent)] ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>Images API 路径走标准 <code className="font-mono-token">/v1/images/generations</code> + <code className="font-mono-token">/v1/images/edits</code>,无 SSE 保活,长推理 CF 524 风险更高,但兼容性最广。</span>
         </div>

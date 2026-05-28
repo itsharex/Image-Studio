@@ -7,9 +7,9 @@ export function SettingsRow({
   label: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
-    <div className={`platform-card border border-black/[0.05] bg-white/72 px-4 py-3.5 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-[rgb(29_32_40_/_0.88)] ${isWindows ? "rounded-[12px]" : "rounded-[20px]"}`}>
+    <div className={`platform-card border border-black/[0.05] bg-white/72 px-4 py-3.5 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-[rgb(29_32_40_/_0.88)] ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"}`}>
       <label className="mb-2.5 block text-[11px] font-semibold tracking-[0.04em] text-zinc-700 dark:text-zinc-200">{label}</label>
       {children}
     </div>
@@ -25,7 +25,7 @@ export function SettingsSegButton({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
     <button
       type="button"
@@ -34,7 +34,7 @@ export function SettingsSegButton({
         active
           ? "active bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
           : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
-      } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+      } ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
     >
       {children}
     </button>

@@ -20,7 +20,7 @@ export function UpstreamConfigModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const { isAndroidPhone, isWindows, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, usesFluentUI, usesAppleUI } = usePlatform();
   const {
     profiles, activeProfileId,
     createProfile, updateProfile, deleteProfile, duplicateProfile, setActiveProfile,
@@ -170,7 +170,7 @@ export function UpstreamConfigModal({
                 key={item.id}
                 type="button"
                 onClick={() => handleNew(item.id)}
-                className={`platform-card flex flex-col items-start gap-2 border border-black/[0.08] bg-white/70 p-4 text-left transition-colors hover:border-[color:var(--accent)]/35 hover:bg-[var(--accent-soft)]/60 dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[10px]" : "rounded-[18px]"}`}
+                className={`platform-card flex flex-col items-start gap-2 border border-black/[0.08] bg-white/70 p-4 text-left transition-colors hover:border-[color:var(--accent)]/35 hover:bg-[var(--accent-soft)]/60 dark:border-white/[0.06] dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[10px]" : "rounded-[18px]"}`}
               >
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-8 min-w-[32px] items-center justify-center rounded-full bg-[var(--accent-soft)] px-2 text-[11px] font-semibold text-[var(--accent)]">
@@ -180,14 +180,14 @@ export function UpstreamConfigModal({
                 </div>
                 <p className="text-[12px] leading-5 text-zinc-600 dark:text-zinc-300">{item.sub}</p>
                 <p className="text-[11px] leading-5 text-zinc-500 dark:text-zinc-400">{item.note}</p>
-                <span className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>
+                <span className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>
                   <Plus className="h-3 w-3" /> 新建这类配置
                 </span>
               </button>
             ))}
           </div>
 
-          <div className={`flex items-start gap-2 border border-[color:var(--accent)]/18 bg-[var(--accent-soft)] px-3 py-2 text-[11px] text-[var(--accent)] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+          <div className={`flex items-start gap-2 border border-[color:var(--accent)]/18 bg-[var(--accent-soft)] px-3 py-2 text-[11px] text-[var(--accent)] ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>保存后会写入系统凭据存储。之后你可以在这里继续新增多个上游配置，再按场景切换。</span>
           </div>

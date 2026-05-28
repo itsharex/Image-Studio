@@ -87,7 +87,7 @@ export function ContextualSection({
   onClearAnnotations: () => void;
   onResetView: () => void;
 }) {
-  const { isMac, isWindows } = usePlatform();
+  const { isMac, usesFluentUI } = usePlatform();
   return (
     <>
       {showMaskTools ? (
@@ -138,7 +138,7 @@ export function ContextualSection({
                 style={{ background: c }}
                 className={`h-4 w-4 ring-1 transition-all ${
                   annotationColor === c ? "ring-2 ring-offset-1 ring-[color:var(--accent)]" : "ring-black/10 dark:ring-white/10"
-                } ${colorDotRadius(isWindows)}`}
+                } ${colorDotRadius(usesFluentUI)}`}
               />
             ))}
           </div>
@@ -177,7 +177,7 @@ export function TransformSection({
   onFlip: (horizontal: boolean) => void;
   cropAction: null | (() => void);
 }) {
-  const { isMac, isWindows } = usePlatform();
+  const { isMac, usesFluentUI } = usePlatform();
   return (
     <>
       {isAndroidPhone ? (
@@ -226,7 +226,7 @@ export function ResultMetaSection({
   metaBadges: string[];
   onToggleResultGrid: () => void;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
     <>
       {showBatchGridToggle ? (
@@ -258,7 +258,7 @@ export function ActionSection({
   onClearCanvas: () => void;
   onSaveAs: () => void;
 }) {
-  const { isMac, isWindows, isAndroidPhone } = usePlatform();
+  const { isMac, usesFluentUI, isAndroidPhone } = usePlatform();
   return (
     <>
       <ToolBtn onClick={onToggleFullscreen} title={fullscreen ? `退出全屏 (${fullscreenShortcutLabel})` : `全屏 (${fullscreenShortcutLabel})`} label={isMac ? "全屏" : undefined}>

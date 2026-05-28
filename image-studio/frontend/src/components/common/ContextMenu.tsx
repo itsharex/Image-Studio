@@ -19,7 +19,7 @@ export function ContextMenu({
   items: MenuItem[];
   onClose: () => void;
 }) {
-  const { isWindows, usesAppleUI } = usePlatform();
+  const { usesFluentUI, usesAppleUI } = usePlatform();
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function ContextMenu({
       ref={ref}
       style={{ position: "fixed", left, top, width: w }}
       onContextMenu={(e) => e.preventDefault()}
-      className={`z-[9200] overflow-hidden border border-black/[0.08] bg-white/95 py-1 shadow-[0_24px_60px_rgb(15_23_42_/_0.16)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/95 ${usesAppleUI ? "liquid-glass-panel" : ""} ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}
+      className={`z-[9200] overflow-hidden border border-black/[0.08] bg-white/95 py-1 shadow-[0_24px_60px_rgb(15_23_42_/_0.16)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-zinc-900/95 ${usesAppleUI ? "liquid-glass-panel" : ""} ${usesFluentUI ? "rounded-[12px]" : "rounded-[18px]"}`}
     >
       {items.map((it, i) => (
         <div key={i}>

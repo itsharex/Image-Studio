@@ -23,20 +23,20 @@ export function DesktopAdvancedPanel({
   setAdvancedOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setField: (key: string, value: any) => void;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
 
   return (
     <section>
       <button
         onClick={() => setAdvancedOpen((v) => !v)}
         type="button"
-        className={`platform-card flex w-full items-center justify-between border border-black/[0.05] bg-white/70 px-4 py-3 text-[11px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:text-zinc-100 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+        className={`platform-card flex w-full items-center justify-between border border-black/[0.05] bg-white/70 px-4 py-3 text-[11px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:text-zinc-100 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
       >
         <span className="uppercase tracking-[0.12em]">高级参数</span>
         <span className="text-[11px] opacity-70">{advancedOpen ? "收起 ▾" : "展开 ▸"}</span>
       </button>
       {advancedOpen ? (
-        <div className={`platform-card mt-2 flex flex-col border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px] gap-3 p-4" : "rounded-[20px] gap-3 p-4"}`}>
+        <div className={`platform-card mt-2 flex flex-col border border-black/[0.05] bg-white/70 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px] gap-3 p-4" : "rounded-[20px] gap-3 p-4"}`}>
           <AdvancedCard title="负向提示词">
             <AdvancedNegativePromptField
               negativePrompt={negativePrompt}

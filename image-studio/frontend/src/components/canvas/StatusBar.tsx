@@ -13,7 +13,7 @@ function fmtBytes(b: number): string {
 
 export function StatusBar() {
   const { isRunning, progress, currentImage, lastLogLine, viewZoom, recentDurations, jobsTotal, jobsCompleted, runningJobs } = useStudioStore();
-  const { isAndroidPhone, isMac, isWindows, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, isMac, usesFluentUI, usesAppleUI } = usePlatform();
   const [clockNow, setClockNow] = useState(() => Date.now());
   const [progressAnchor, setProgressAnchor] = useState(() => ({ elapsed: 0, at: Date.now() }));
   const zoomLabel = currentImage ? `${Math.round(viewZoom * 100)}%` : "";
@@ -44,7 +44,7 @@ export function StatusBar() {
 
   if (isRunning) {
     return (
-      <div className={`relative flex items-center gap-3 overflow-hidden border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-700 backdrop-blur-2xl dark:text-zinc-300 ${usesAppleUI ? "liquid-glass-bar" : ""} ${isWindows ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""} ${isMac ? "min-h-[28px]" : ""}`}>
+      <div className={`relative flex items-center gap-3 overflow-hidden border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-700 backdrop-blur-2xl dark:text-zinc-300 ${usesAppleUI ? "liquid-glass-bar" : ""} ${usesFluentUI ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""} ${isMac ? "min-h-[28px]" : ""}`}>
         <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[var(--accent)]" />
         <span className="font-medium">
           {progress
@@ -75,7 +75,7 @@ export function StatusBar() {
     if (!isMac && currentImage.seed) metaBadges.push(`seed ${currentImage.seed}`);
     if (!isMac && currentImage.styleTag) metaBadges.push(`#${currentImage.styleTag}`);
     return (
-      <div className={`flex items-center gap-3 overflow-hidden border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-600 backdrop-blur-2xl dark:text-zinc-400 ${usesAppleUI ? "liquid-glass-bar" : ""} ${isWindows ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""} ${isMac ? "min-h-[28px]" : ""}`}>
+      <div className={`flex items-center gap-3 overflow-hidden border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-600 backdrop-blur-2xl dark:text-zinc-400 ${usesAppleUI ? "liquid-glass-bar" : ""} ${usesFluentUI ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""} ${isMac ? "min-h-[28px]" : ""}`}>
         <span className="inline-flex shrink-0 items-center gap-1.5 text-[var(--accent)]">
           <CheckCircle2 className="w-3 h-3" />
           <span className="font-medium">{headline}</span>
@@ -93,7 +93,7 @@ export function StatusBar() {
   }
   if (isMac) return null;
   return (
-    <div className={`border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-500 backdrop-blur-2xl ${usesAppleUI ? "liquid-glass-bar" : ""} ${isWindows ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""}`}>
+    <div className={`border-t border-[var(--border)] bg-[var(--toolbar)] px-3 py-2 text-[11px] text-zinc-500 backdrop-blur-2xl ${usesAppleUI ? "liquid-glass-bar" : ""} ${usesFluentUI ? "min-h-[34px]" : ""} ${isAndroidPhone ? "min-h-[30px]" : ""}`}>
       准备就绪
     </div>
   );

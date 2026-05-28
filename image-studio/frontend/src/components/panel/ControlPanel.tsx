@@ -39,7 +39,7 @@ export function ControlPanel() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [promptPopover, setPromptPopover] = useState(false);
   const [macComposeOpen, setMacComposeOpen] = useState(false);
-  const { isAndroid, isAndroidPhone, isAndroidPad, isMac, isWindows, usesAndroidUI, usesAppleUI } = usePlatform();
+  const { isAndroid, isAndroidPhone, isAndroidPad, isMac, usesAndroidUI, usesAppleUI, usesFluentUI } = usePlatform();
 
   if (isAndroidPhone) {
     return <AndroidPhoneComposePanel />;
@@ -90,12 +90,12 @@ export function ControlPanel() {
   }
 
   return (
-    <div className={`control-panel box-border flex shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI ? "android-surface-pane" : ""} ${isMac ? "w-[408px] gap-5 px-6 py-5" : "w-[372px] gap-4 px-5 py-4"} ${isWindows ? "pt-3" : ""}`}>
+    <div className={`control-panel box-border flex shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--sidebar)] backdrop-blur-2xl ${usesAppleUI ? "liquid-sidebar" : ""} ${usesAndroidUI ? "android-surface-pane" : ""} ${isMac ? "w-[408px] gap-5 px-6 py-5" : "w-[372px] gap-4 px-5 py-4"} ${usesFluentUI ? "pt-3" : ""}`}>
       <section className={`platform-card ${isMac ? "px-5 py-5" : "px-4 py-4"}`}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2
-              className={`text-zinc-900 dark:text-zinc-100 ${isWindows ? "text-[18px] font-semibold tracking-[0]" : "text-[20px] font-semibold tracking-[-0.02em]"}`}
+              className={`text-zinc-900 dark:text-zinc-100 ${usesFluentUI ? "text-[18px] font-semibold tracking-[0]" : "text-[20px] font-semibold tracking-[-0.02em]"}`}
               style={{ fontFamily: "var(--title-font)" }}
             >
               图像工作台
@@ -123,7 +123,7 @@ export function ControlPanel() {
             )}
           </div>
           {!isMac && (
-            <div className={`platform-pill bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-2xl"}`}>
+            <div className={`platform-pill bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-2xl"}`}>
               {mode === "edit" ? "图生图" : "文生图"}
             </div>
           )}
@@ -184,7 +184,7 @@ export function ControlPanel() {
           handleAspectSelect={handleAspectSelect}
           handleResolutionSelect={handleResolutionSelect}
           imageModelID={imageModelID}
-          isWindows={isWindows}
+          usesFluentUI={usesFluentUI}
           mode={mode}
           onRemoveSource={removeSource}
           quality={quality}

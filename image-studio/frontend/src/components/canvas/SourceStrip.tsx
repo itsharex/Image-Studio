@@ -10,7 +10,7 @@ export function SourceStrip() {
   const reorderSources = useStudioStore((s) => s.reorderSources);
   const mode = useStudioStore((s) => s.mode);
   const selectSourceImage = useStudioStore((s) => s.selectSourceImage);
-  const { isMac, isWindows, usesAppleUI } = usePlatform();
+  const { isMac, usesFluentUI, usesAppleUI } = usePlatform();
 
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -46,7 +46,7 @@ export function SourceStrip() {
       <button
         onClick={selectSourceImage}
         title="添加参考图"
-        className={`source-thumb add flex h-12 w-12 shrink-0 items-center justify-center border border-dashed border-zinc-300 text-zinc-500 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-zinc-700 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+        className={`source-thumb add flex h-12 w-12 shrink-0 items-center justify-center border border-dashed border-zinc-300 text-zinc-500 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-zinc-700 ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
       >
         <Plus className="w-4 h-4" />
       </button>
@@ -76,7 +76,7 @@ function SourceTile({
   removeSource: (index: number) => void;
 }) {
   const previewURL = useBlobURL(source.imageBlob ?? null, source.imageB64 ?? null);
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
     <div
       draggable
@@ -95,7 +95,7 @@ function SourceTile({
         overIdx === index
           ? "scale-105 border-[color:var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
           : "border-black/[0.06] hover:border-[color:var(--accent)]/30 dark:border-white/[0.06]"
-      } ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+      } ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
     >
       <span className="absolute top-0 left-0 z-10 px-1 text-[9px] bg-zinc-950/70 text-white rounded-br">
         {index + 1}

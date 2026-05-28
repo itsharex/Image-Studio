@@ -12,7 +12,7 @@ export function Modal({
   children: ReactNode;
   width?: number;
 }) {
-  const { isAndroidPhone, isWindows, usesAppleUI } = usePlatform();
+  const { isAndroidPhone, usesFluentUI, usesAppleUI } = usePlatform();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -31,7 +31,7 @@ export function Modal({
       <div
         style={{ width }}
         onClick={(e) => e.stopPropagation()}
-        className={`app-modal-card ${usesAppleUI ? "liquid-glass-panel" : ""} ${isAndroidPhone ? "app-modal-card-phone" : "app-modal-card-desktop"} ${isWindows ? "app-modal-card-windows" : ""}`}
+        className={`app-modal-card ${usesAppleUI ? "liquid-glass-panel" : ""} ${isAndroidPhone ? "app-modal-card-phone" : "app-modal-card-desktop"} ${usesFluentUI ? "app-modal-card-windows" : ""}`}
       >
         {title && (
           <div className={`app-modal-header ${isAndroidPhone ? "app-modal-header-phone" : "app-modal-header-desktop"}`}>
@@ -39,7 +39,7 @@ export function Modal({
             <button
               onClick={onClose}
               title="关闭 (Esc)"
-              className={`-mr-1 p-1.5 text-zinc-500 hover:bg-black/[0.05] hover:text-zinc-900 dark:hover:bg-white/[0.06] dark:hover:text-zinc-100 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              className={`-mr-1 p-1.5 text-zinc-500 hover:bg-black/[0.05] hover:text-zinc-900 dark:hover:bg-white/[0.06] dark:hover:text-zinc-100 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
             >
               <X className="w-4 h-4" />
             </button>

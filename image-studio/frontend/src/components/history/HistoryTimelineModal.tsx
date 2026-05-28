@@ -35,7 +35,7 @@ export function HistoryTimelineModal() {
     openResultDetail,
     pushToast,
   } = useStudioStore();
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   const [query, setQuery] = useState("");
   const [modeFilter, setModeFilter] = useState<ModeFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -91,7 +91,7 @@ export function HistoryTimelineModal() {
     <Modal open onClose={closeHistoryTimeline} title="更多历史" width={920}>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-[minmax(0,1fr)_140px_140px] gap-2">
-          <label className={`flex items-center gap-2 border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 dark:border-white/[0.08] ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}>
+          <label className={`flex items-center gap-2 border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 dark:border-white/[0.08] ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}>
             <Search className="h-3.5 w-3.5 text-zinc-400" />
             <input
               value={query}
@@ -103,7 +103,7 @@ export function HistoryTimelineModal() {
           <select
             value={modeFilter}
             onChange={(e) => setModeFilter(e.target.value as ModeFilter)}
-            className={`focus-ring border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+            className={`focus-ring border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
           >
             <option value="all">全部模式</option>
             <option value="generate">文生图</option>
@@ -112,7 +112,7 @@ export function HistoryTimelineModal() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className={`focus-ring border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+            className={`focus-ring border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
           >
             <option value="all">全部日期</option>
             <option value="today">今天</option>
@@ -126,13 +126,13 @@ export function HistoryTimelineModal() {
             type="date"
             value={pickedDate}
             onChange={(e) => setPickedDate(e.target.value)}
-            className={`focus-ring w-[220px] border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+            className={`focus-ring w-[220px] border border-black/[0.08] bg-[var(--surface)] px-3 py-2.5 text-[12px] text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
           />
         )}
 
         <div className="max-h-[68vh] overflow-y-auto pr-1">
           {groups.length === 0 ? (
-            <div className={`border border-dashed border-black/[0.08] py-12 text-center text-[13px] text-zinc-500 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[12px]" : "rounded-[20px]"}`}>
+            <div className={`border border-dashed border-black/[0.08] py-12 text-center text-[13px] text-zinc-500 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"}`}>
               没有匹配的历史记录
             </div>
           ) : (

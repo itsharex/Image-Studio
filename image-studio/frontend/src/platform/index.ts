@@ -103,7 +103,12 @@ function detectRawTargetPlatform(): UITargetPlatform {
 }
 
 function detectAndroidAdaptiveTarget(): UITargetPlatform {
-  return androidWidthClassForViewport() === "compact" ? "android" : "android-pad";
+  const widthClass = androidWidthClassForViewport();
+  if (widthClass === "compact") return "android";
+  if (widthClass === "medium") {
+    return androidOrientationForViewport() === "landscape" ? "android-pad" : "android";
+  }
+  return "android-pad";
 }
 
 function androidWidthDpForViewport(): number {
@@ -163,6 +168,7 @@ function familyForTarget(value: UITargetPlatform): UIFamily {
     case "android-pad":
       return "android";
     case "windows":
+    case "linux":
       return "fluent";
     default:
       return "generic";
@@ -195,7 +201,9 @@ export function readRuntimePlatformState() {
     isAndroidPhone: target === "android",
     isMac: platform === "macos" || platform === "ios",
     isWindows: platform === "windows",
+    isLinux: platform === "linux",
     usesAppleUI: uiFamily === "apple",
+    usesFluentUI: uiFamily === "fluent",
     usesAndroidUI: uiFamily === "android",
   };
 }
@@ -209,9 +217,11 @@ export const isAndroid = initialState.isAndroid;
 export const isAndroidPad = initialState.isAndroidPad;
 export const isAndroidPhone = initialState.isAndroidPhone;
 export const usesAppleUI = initialState.usesAppleUI;
+export const usesFluentUI = initialState.usesFluentUI;
 export const usesAndroidUI = initialState.usesAndroidUI;
 export const isMac = initialState.isMac;
 export const isWindows = initialState.isWindows;
+export const isLinux = initialState.isLinux;
 
 export function applyPlatformAttributes(root: HTMLElement = document.documentElement) {
   if (!root) return;

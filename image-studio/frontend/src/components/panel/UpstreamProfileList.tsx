@@ -25,11 +25,11 @@ export function UpstreamProfileList({
   onHandleDelete: () => void | Promise<void>;
   onHandleSetActive: () => void | Promise<void>;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
 
   return (
     <aside className={`flex shrink-0 flex-col gap-2 ${isAndroidPhone ? "w-full" : "w-[240px]"}`}>
-      <div className={`flex-1 overflow-y-auto border border-black/[0.08] bg-[var(--surface)] p-1.5 dark:border-white/[0.06] ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`} style={{ maxHeight: isAndroidPhone ? 172 : 460 }}>
+      <div className={`flex-1 overflow-y-auto border border-black/[0.08] bg-[var(--surface)] p-1.5 dark:border-white/[0.06] ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`} style={{ maxHeight: isAndroidPhone ? 172 : 460 }}>
         {profiles.length === 0 ? (
           <p className="px-2 py-3 text-[11px] text-zinc-500">还没有配置,点下方「+ 新建」开始。</p>
         ) : (
@@ -46,7 +46,7 @@ export function UpstreamProfileList({
                     isSel
                       ? "border-[color:var(--accent)]/35 bg-[var(--accent-soft)] text-[var(--accent)]"
                       : "border-transparent text-zinc-700 hover:bg-black/[0.04] dark:text-zinc-300 dark:hover:bg-white/[0.04]"
-                  } ${isAndroidPhone ? "min-w-[208px]" : "mb-1 w-full"} ${isWindows ? "rounded-[8px]" : "rounded-[12px]"}`}
+                  } ${isAndroidPhone ? "min-w-[208px]" : "mb-1 w-full"} ${usesFluentUI ? "rounded-[8px]" : "rounded-[12px]"}`}
                 >
                   <span
                     title={isActive ? "当前激活" : "点列表切换 selected;点「设为激活」激活"}
@@ -66,7 +66,7 @@ export function UpstreamProfileList({
         <button
           type="button"
           onClick={() => void onHandleNew()}
-          className={`platform-action-btn inline-flex flex-1 items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-action-btn inline-flex flex-1 items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <Plus className="h-3 w-3" /> 新建
         </button>
@@ -75,7 +75,7 @@ export function UpstreamProfileList({
           onClick={() => void onHandleDuplicate()}
           disabled={!selectedId}
           title="复制当前选中"
-          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <Copy className="h-3 w-3" />
         </button>
@@ -84,7 +84,7 @@ export function UpstreamProfileList({
           onClick={() => void onHandleDelete()}
           disabled={!selectedId}
           title="删除当前选中(连同凭据)"
-          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-500 transition-colors hover:border-red-400/45 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.08] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-black/[0.08] px-2.5 py-1.5 text-[11px] text-zinc-500 transition-colors hover:border-red-400/45 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.08] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -93,7 +93,7 @@ export function UpstreamProfileList({
         <button
           type="button"
           onClick={() => void onHandleSetActive()}
-          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-[color:var(--accent)]/30 bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-medium text-[var(--accent)] transition-colors hover:bg-[color:var(--accent)]/15 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`platform-action-btn inline-flex items-center justify-center gap-1 border border-[color:var(--accent)]/30 bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-medium text-[var(--accent)] transition-colors hover:bg-[color:var(--accent)]/15 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           设为当前激活
         </button>

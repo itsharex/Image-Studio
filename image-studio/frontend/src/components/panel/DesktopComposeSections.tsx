@@ -34,7 +34,7 @@ export function DesktopComposeSections({
   size,
   sources,
   styleTag,
-  isWindows,
+  usesFluentUI,
   availableResolutions,
 }: {
   activeAspect: AspectPreset;
@@ -46,7 +46,7 @@ export function DesktopComposeSections({
   handleAspectSelect: (aspect: AspectPreset) => void;
   handleResolutionSelect: (resolution: ResolutionPreset) => void;
   imageModelID: string;
-  isWindows: boolean;
+  usesFluentUI: boolean;
   mode: Mode;
   onRemoveSource: (index: number) => void;
   quality: QualityValue;
@@ -78,7 +78,7 @@ export function DesktopComposeSections({
                   active
                     ? "active bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/20"
                     : "text-zinc-600 dark:text-zinc-400 ring-black/[0.08] dark:ring-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-200 hover:ring-[color:var(--accent)]/30"
-                } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                } ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
               >
                 {style.label}
               </button>
@@ -100,7 +100,7 @@ export function DesktopComposeSections({
                   active
                     ? "bg-[var(--accent-soft)] ring-[color:var(--accent)]/35"
                     : "ring-black/[0.08] dark:ring-white/[0.08] hover:ring-[color:var(--accent)]/30"
-                } py-2 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}
+                } py-2 ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}
               >
                 <span
                   className={`block rounded-sm border-2 ${aspect.auto ? "border-dashed" : ""} ${
@@ -163,7 +163,7 @@ export function DesktopComposeSections({
                 batchCount === count
                   ? "border-[color:var(--accent)]/35 bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-black/[0.08] text-zinc-600 hover:border-[color:var(--accent)]/30 hover:text-zinc-900 dark:border-white/[0.08] dark:text-zinc-400 dark:hover:text-zinc-200"
-              } ${isWindows ? "h-9 rounded-[8px]" : "h-9 rounded-[12px]"}`}
+              } ${usesFluentUI ? "h-9 rounded-[8px]" : "h-9 rounded-[12px]"}`}
             >
               {count}
             </button>
@@ -178,12 +178,12 @@ export function DesktopComposeSections({
         <Section label={`源图片 / 参考图${sources.length > 0 ? ` · ${sources.length} 张` : ""}`}>
           <div className="flex flex-col gap-1.5">
             {sources.length === 0 && currentImageSavedPath ? (
-              <div className={`border border-black/[0.06] bg-[var(--surface)] px-3 py-2 text-xs italic text-zinc-500 dark:border-white/[0.04] dark:text-zinc-500 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+              <div className={`border border-black/[0.06] bg-[var(--surface)] px-3 py-2 text-xs italic text-zinc-500 dark:border-white/[0.04] dark:text-zinc-500 ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
                 (画板当前图 · 隐式源图)
               </div>
             ) : null}
             {sources.map((source, index) => (
-              <div key={source.path} className={`flex items-center gap-1 border border-black/[0.06] bg-[var(--surface)] px-2.5 py-2 dark:border-white/[0.06] ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+              <div key={source.path} className={`flex items-center gap-1 border border-black/[0.06] bg-[var(--surface)] px-2.5 py-2 dark:border-white/[0.06] ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
                 <span className="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300" title={source.path}>
                   {index + 1}. {source.name}
                 </span>
@@ -191,18 +191,18 @@ export function DesktopComposeSections({
                   type="button"
                   onClick={() => onRemoveSource(index)}
                   title="移除"
-                  className={`-m-1 p-1 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 ${isWindows ? "rounded-[6px]" : "rounded-full"}`}
+                  className={`-m-1 p-1 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 ${usesFluentUI ? "rounded-[6px]" : "rounded-full"}`}
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
             <div className="flex gap-1.5">
-              <button onClick={selectSourceImage} className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>
+              <button onClick={selectSourceImage} className={`platform-action-btn flex-1 inline-flex items-center justify-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.08] dark:text-zinc-300 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>
                 <ImagePlus className="w-3.5 h-3.5" /> 添加图片
               </button>
               {sources.length > 0 ? (
-                <button onClick={clearSources} className={`platform-action-btn inline-flex items-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-500 transition-colors hover:border-red-400/40 hover:text-red-400 dark:border-white/[0.08] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>
+                <button onClick={clearSources} className={`platform-action-btn inline-flex items-center gap-1 border border-black/[0.08] px-3 py-2 text-xs text-zinc-500 transition-colors hover:border-red-400/40 hover:text-red-400 dark:border-white/[0.08] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               ) : null}

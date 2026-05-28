@@ -3,7 +3,7 @@ import { usePlatform } from "../../platform/context";
 import { HitokotoStrip } from "./HitokotoStrip";
 
 export function AppHeaderBrand() {
-  const { isAndroidPhone, isAndroidPad, isWindows, isMac, usesAndroidUI } = usePlatform();
+  const { isAndroidPhone, isAndroidPad, usesFluentUI, isMac, usesAndroidUI } = usePlatform();
 
   if (usesAndroidUI) {
     return (
@@ -14,7 +14,7 @@ export function AppHeaderBrand() {
               ? "text-[10px] font-semibold tracking-[0]"
               : isAndroidPad
                 ? "text-[15px] font-semibold tracking-[0]"
-                : isWindows
+                : usesFluentUI
                   ? "font-[600] text-[14px] tracking-[0]"
                   : "text-[13px] font-semibold tracking-[-0.01em]"
           }`}
@@ -34,13 +34,13 @@ export function AppHeaderBrand() {
 
   return (
     <div className="flex min-w-0 items-center gap-3.5">
-      <span className={`inline-flex shrink-0 items-center justify-center border border-white/44 bg-white/70 text-[var(--accent)] shadow-[0_12px_32px_rgb(15_23_42_/_0.12)] dark:border-white/10 dark:bg-white/[0.06] ${isWindows ? "h-8 w-8 rounded-[10px]" : isMac ? "h-10 w-10 rounded-[14px]" : "h-10 w-10 rounded-[13px]"}`}>
+      <span className={`inline-flex shrink-0 items-center justify-center border border-white/44 bg-white/70 text-[var(--accent)] shadow-[0_12px_32px_rgb(15_23_42_/_0.12)] dark:border-white/10 dark:bg-white/[0.06] ${usesFluentUI ? "h-8 w-8 rounded-[10px]" : isMac ? "h-10 w-10 rounded-[14px]" : "h-10 w-10 rounded-[13px]"}`}>
         <ImageIcon className="h-4.5 w-4.5" />
       </span>
       <div className="min-w-0 leading-tight">
         <div
           className={`android-header-title text-zinc-900 dark:text-zinc-100 ${
-            isWindows
+            usesFluentUI
               ? "font-[600] text-[14px] tracking-[0]"
               : isMac
                 ? "text-[16px] font-semibold tracking-[-0.01em]"
@@ -55,7 +55,7 @@ export function AppHeaderBrand() {
             图像工作区
           </div>
         ) : (
-          <div className={`flex min-w-0 items-center text-zinc-500 dark:text-zinc-400 ${isWindows ? "mt-0 text-[10px]" : "mt-0.5 text-[11px]"}`}>
+          <div className={`flex min-w-0 items-center text-zinc-500 dark:text-zinc-400 ${usesFluentUI ? "mt-0 text-[10px]" : "mt-0.5 text-[11px]"}`}>
             <HitokotoStrip />
           </div>
         )}

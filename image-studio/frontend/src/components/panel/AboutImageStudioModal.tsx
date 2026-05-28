@@ -22,13 +22,13 @@ export function AboutImageStudioModal({
   onOpenLicense: () => void;
   onOpenRepo: () => void;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   const hostCapabilities = getHostCapabilities();
 
   return (
     <Modal open={open} onClose={onClose} title="关于 Image Studio" width={460}>
       <div className={`text-center ${androidTarget.isAndroid ? "mb-4" : "mb-5"}`}>
-        <div className={`w-14 h-14 mx-auto ${androidTarget.isAndroid ? "mb-1.5" : "mb-2"} bg-white dark:bg-zinc-100 ring-1 ring-black/15 dark:ring-white/20 flex items-center justify-center ${isWindows ? "rounded-[12px]" : "rounded-2xl"}`}>
+        <div className={`w-14 h-14 mx-auto ${androidTarget.isAndroid ? "mb-1.5" : "mb-2"} bg-white dark:bg-zinc-100 ring-1 ring-black/15 dark:ring-white/20 flex items-center justify-center ${usesFluentUI ? "rounded-[12px]" : "rounded-2xl"}`}>
           <svg width="40" height="40" viewBox="0 0 1024 1024" fill="none" aria-hidden>
             <rect x="160" y="270" width="704" height="490" rx="56" stroke="#18181b" strokeWidth="56" />
             <path d="M 200 740 L 420 470 L 560 600 L 460 740 Z" fill="#52525b" />
@@ -77,14 +77,14 @@ export function AboutImageStudioModal({
         <button
           type="button"
           onClick={onOpenRepo}
-          className={`liquid-primary-button flex-1 inline-flex items-center justify-center gap-1.5 bg-[var(--accent)] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`liquid-primary-button flex-1 inline-flex items-center justify-center gap-1.5 bg-[var(--accent)] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-2)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <Github className="w-3.5 h-3.5" /> GitHub 仓库
         </button>
         <button
           type="button"
           onClick={onOpenFeedback}
-          className={`flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:bg-black/[0.04] dark:border-white/[0.08] dark:text-zinc-300 dark:hover:bg-white/[0.06] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 border border-black/[0.08] px-3 py-2 text-xs text-zinc-700 transition-colors hover:bg-black/[0.04] dark:border-white/[0.08] dark:text-zinc-300 dark:hover:bg-white/[0.06] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
         >
           <MessageSquare className="w-3.5 h-3.5" /> 反馈
         </button>

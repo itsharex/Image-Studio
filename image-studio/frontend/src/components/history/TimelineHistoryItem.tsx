@@ -25,7 +25,7 @@ export function TimelineHistoryItem({
   onToggleCompare: () => void;
   onOpenMenu: (x: number, y: number) => void;
 }) {
-  const { isMac, isWindows } = usePlatform();
+  const { isMac, usesFluentUI } = usePlatform();
   const previewURL = useBlobURL(item.previewBlob ?? item.imageBlob ?? null, item.imageB64 ?? null);
   const timeLabel = new Date(item.createdAt).toLocaleTimeString();
 
@@ -40,7 +40,7 @@ export function TimelineHistoryItem({
           e.preventDefault();
           onOpenMenu(e.clientX, e.clientY);
         }}
-        className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"} ${
+        className={`platform-card border border-black/[0.05] bg-white/70 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px]" : "rounded-[18px]"} ${
           isCurrent ? "ring-1 ring-[color:var(--accent)]/40" : ""
         }`}
       >
@@ -48,7 +48,7 @@ export function TimelineHistoryItem({
           <button
             type="button"
             onClick={onSelect}
-            className={`relative aspect-[4/3] overflow-hidden border border-black/[0.06] dark:border-white/[0.06] ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}
+            className={`relative aspect-[4/3] overflow-hidden border border-black/[0.06] dark:border-white/[0.06] ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}
           >
             <img
               src={previewURL ?? `data:image/png;base64,${item.imageB64}`}
@@ -79,7 +79,7 @@ export function TimelineHistoryItem({
                   e.stopPropagation();
                   onOpenMenu(e.clientX, e.clientY);
                 }}
-                className={`inline-flex min-h-[30px] items-center justify-center gap-1 px-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+                className={`inline-flex min-h-[30px] items-center justify-center gap-1 px-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
               >
                 <Ellipsis className="h-3.5 w-3.5" />
                 更多
@@ -87,10 +87,10 @@ export function TimelineHistoryItem({
               <span className="text-[10px] text-zinc-400/90 dark:text-zinc-500">双击设为源图</span>
             </div>
             <div className={`${isMac ? "mt-3 flex flex-wrap items-center gap-2" : "mt-3 flex flex-wrap gap-2"}`}>
-              <button onClick={onSelect} className={`platform-pill inline-flex min-h-[34px] min-w-[78px] items-center justify-center px-3 py-1.5 text-[11px] font-medium text-zinc-600 hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>查看</button>
-              <button onClick={onReuse} className={`platform-pill inline-flex min-h-[34px] min-w-[96px] items-center justify-center px-3 py-1.5 text-[11px] font-medium text-zinc-600 hover:text-[var(--accent)] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>设为源图</button>
-              <button onClick={onToggleCompare} className={`platform-pill inline-flex min-h-[30px] min-w-[68px] items-center justify-center px-2.5 text-[11px] font-medium ${isCompare ? "text-[var(--accent)]" : "text-zinc-500 hover:text-[var(--accent)]"} ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>对比</button>
-              <button onClick={onDelete} className={`platform-pill inline-flex min-h-[30px] min-w-[68px] items-center justify-center px-2.5 text-[11px] font-medium text-zinc-500 hover:text-red-400 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}>删除</button>
+              <button onClick={onSelect} className={`platform-pill inline-flex min-h-[34px] min-w-[78px] items-center justify-center px-3 py-1.5 text-[11px] font-medium text-zinc-600 hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>查看</button>
+              <button onClick={onReuse} className={`platform-pill inline-flex min-h-[34px] min-w-[96px] items-center justify-center px-3 py-1.5 text-[11px] font-medium text-zinc-600 hover:text-[var(--accent)] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>设为源图</button>
+              <button onClick={onToggleCompare} className={`platform-pill inline-flex min-h-[30px] min-w-[68px] items-center justify-center px-2.5 text-[11px] font-medium ${isCompare ? "text-[var(--accent)]" : "text-zinc-500 hover:text-[var(--accent)]"} ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>对比</button>
+              <button onClick={onDelete} className={`platform-pill inline-flex min-h-[30px] min-w-[68px] items-center justify-center px-2.5 text-[11px] font-medium text-zinc-500 hover:text-red-400 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}>删除</button>
             </div>
           </div>
         </div>

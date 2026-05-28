@@ -1,0 +1,280 @@
+/* Windows and Linux desktop share the Fluent family: Segoe typography,
+   8px control rhythm, layered Mica-like surfaces, and responsive panes. */
+
+:root[data-ui-family="fluent"] {
+  --accent: #0067c0;
+  --accent-2: #0f7ad6;
+  --accent-soft: rgb(0 103 192 / 0.12);
+  --bg: #f3f3f3;
+  --bg-2: #ededed;
+  --panel: rgb(255 255 255 / 0.88);
+  --panel-2: rgb(250 250 250 / 0.92);
+  --surface: #fbfbfb;
+  --surface-2: #efefef;
+  --sidebar: rgb(248 248 248 / 0.82);
+  --inspector: rgb(244 244 244 / 0.82);
+  --toolbar: rgb(246 246 246 / 0.82);
+  --border: rgb(0 0 0 / 0.09);
+  --border-2: rgb(0 0 0 / 0.18);
+  --text: #1f1f1f;
+  --text-muted: rgb(54 54 54 / 0.78);
+  --text-dim: rgb(96 96 96 / 0.76);
+  --danger: #c42b1c;
+  --danger-soft: rgb(196 43 28 / 0.12);
+  --success: #0f7b0f;
+  --canvas-bg: #ececec;
+  --canvas-tile: #dbdbdb;
+  --on-accent-soft: #005a9e;
+  --btn-secondary-bg: #f6f6f6;
+  --btn-secondary-bg-hover: #ececec;
+  --tool-hover-bg: rgb(0 103 192 / 0.1);
+  --tool-hover-text: #005a9e;
+  --error-text: #8a1010;
+  --error-border: rgb(196 43 28 / 0.22);
+  --shadow-card: 0 3px 8px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 8px 18px rgb(0 0 0 / 0.12), 0 2px 4px rgb(0 0 0 / 0.08);
+  --window-blur: blur(18px) saturate(120%);
+  --window-outline: rgb(255 255 255 / 0.7);
+  --header-height: 48px;
+  --tab-radius: 10px;
+  --card-radius: 12px;
+  --control-radius: 8px;
+  --surface-elevated: rgb(255 255 255 / 0.84);
+  --surface-elevated-dark: rgb(32 32 32 / 0.72);
+  --title-font: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --body-font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono-font: "Cascadia Code", "SFMono-Regular", ui-monospace, Consolas, monospace;
+  --fluent-pane-left: clamp(336px, 25vw, 384px);
+  --fluent-pane-right: clamp(300px, 22vw, 344px);
+}
+
+:root.dark[data-ui-family="fluent"] {
+  --accent: #4cc2ff;
+  --accent-2: #78d3ff;
+  --accent-soft: rgb(76 194 255 / 0.18);
+  --bg: #202020;
+  --bg-2: #1b1b1b;
+  --panel: rgb(42 42 42 / 0.9);
+  --panel-2: rgb(38 38 38 / 0.94);
+  --surface: #2b2b2b;
+  --surface-2: #353535;
+  --sidebar: rgb(35 35 35 / 0.86);
+  --inspector: rgb(31 31 31 / 0.84);
+  --toolbar: rgb(37 37 37 / 0.86);
+  --border: rgb(255 255 255 / 0.08);
+  --border-2: rgb(255 255 255 / 0.18);
+  --text: #f5f5f5;
+  --text-muted: rgb(243 243 243 / 0.76);
+  --text-dim: rgb(215 215 215 / 0.6);
+  --danger: #ff99a4;
+  --danger-soft: rgb(255 153 164 / 0.12);
+  --success: #6ccb5f;
+  --canvas-bg: #252526;
+  --canvas-tile: #343436;
+  --on-accent-soft: #9ddfff;
+  --btn-secondary-bg: #2f2f2f;
+  --btn-secondary-bg-hover: #383838;
+  --tool-hover-bg: rgb(76 194 255 / 0.14);
+  --tool-hover-text: #b7e8ff;
+  --error-text: #ffb4bd;
+  --error-border: rgb(255 153 164 / 0.28);
+  --shadow-card: 0 8px 24px rgb(0 0 0 / 0.34), 0 2px 6px rgb(0 0 0 / 0.28);
+  --shadow-card-hover: 0 12px 32px rgb(0 0 0 / 0.42), 0 4px 10px rgb(0 0 0 / 0.32);
+  --window-outline: rgb(255 255 255 / 0.08);
+}
+
+html[data-ui-family="fluent"] body {
+  text-rendering: optimizeLegibility;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42), transparent 220px),
+    linear-gradient(135deg, #f6f6f6 0%, #eeeeee 52%, #f5f5f5 100%);
+}
+
+html.dark[data-ui-family="fluent"] body {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.04), transparent 220px),
+    linear-gradient(135deg, #202020 0%, #1b1b1b 52%, #242424 100%);
+}
+
+html[data-ui-family="fluent"] .app-root {
+  background: transparent;
+}
+
+html[data-ui-family="fluent"] .app-header {
+  min-height: 48px;
+  padding: 8px 12px;
+  background: var(--toolbar);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+html.dark[data-ui-family="fluent"] .app-header {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+html[data-ui-family="fluent"] .workspace-bar {
+  padding: 6px 12px 7px;
+  gap: 6px;
+  background: color-mix(in srgb, var(--toolbar) 82%, transparent);
+}
+
+html[data-ui-family="fluent"] .studio {
+  grid-template-columns: var(--fluent-pane-left) minmax(360px, 1fr) var(--fluent-pane-right);
+  background: transparent;
+}
+
+html[data-ui-family="fluent"] .control-panel,
+html[data-ui-family="fluent"] .history-rail {
+  background: var(--sidebar);
+  backdrop-filter: var(--window-blur);
+  -webkit-backdrop-filter: var(--window-blur);
+}
+
+html[data-ui-family="fluent"] .history-rail {
+  background: var(--inspector);
+}
+
+html[data-ui-family="fluent"] .platform-card,
+html[data-ui-family="fluent"] .fluent-surface {
+  border-radius: var(--card-radius);
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.36)),
+    var(--surface-elevated);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--window-blur);
+  -webkit-backdrop-filter: var(--window-blur);
+}
+
+html.dark[data-ui-family="fluent"] .platform-card,
+html.dark[data-ui-family="fluent"] .fluent-surface {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.02)),
+    var(--surface-elevated-dark);
+}
+
+html[data-ui-family="fluent"] .platform-card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+html[data-ui-family="fluent"] .platform-seg,
+html[data-ui-family="fluent"] .platform-tab,
+html[data-ui-family="fluent"] .platform-action-btn,
+html[data-ui-family="fluent"] .platform-pill,
+html[data-ui-family="fluent"] .platform-icon-btn,
+html[data-ui-family="fluent"] .platform-chip,
+html[data-ui-family="fluent"] .liquid-primary-button {
+  border-radius: var(--control-radius);
+  min-height: 32px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    transform 80ms ease;
+}
+
+html[data-ui-family="fluent"] .platform-icon-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+html[data-ui-family="fluent"] .platform-icon-btn:hover,
+html[data-ui-family="fluent"] .platform-action-btn:hover,
+html[data-ui-family="fluent"] .platform-pill:hover,
+html[data-ui-family="fluent"] .platform-chip:hover {
+  background: var(--tool-hover-bg);
+  color: var(--tool-hover-text);
+}
+
+html[data-ui-family="fluent"] .platform-chip:is(.active, [aria-pressed="true"]),
+html[data-ui-family="fluent"] .platform-tab:is(.active, [aria-pressed="true"]),
+html[data-ui-family="fluent"] .platform-chip:has(input:checked) {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+html.dark[data-ui-family="fluent"] .platform-chip:is(.active, [aria-pressed="true"]),
+html.dark[data-ui-family="fluent"] .platform-tab:is(.active, [aria-pressed="true"]),
+html.dark[data-ui-family="fluent"] .platform-chip:has(input:checked) {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.24);
+}
+
+html[data-ui-family="fluent"] .liquid-primary-button {
+  border: 1px solid color-mix(in srgb, var(--accent) 84%, black 16%);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+html[data-ui-family="fluent"] .liquid-primary-button:hover {
+  background: var(--accent-2);
+}
+
+html[data-ui-family="fluent"] .platform-action-btn:active,
+html[data-ui-family="fluent"] .platform-pill:active,
+html[data-ui-family="fluent"] .platform-icon-btn:active,
+html[data-ui-family="fluent"] .platform-chip:active,
+html[data-ui-family="fluent"] .liquid-primary-button:active,
+html[data-ui-family="fluent"] .btn:active {
+  transform: translateY(1px);
+}
+
+html[data-ui-family="fluent"] textarea,
+html[data-ui-family="fluent"] select,
+html[data-ui-family="fluent"] input[type="text"],
+html[data-ui-family="fluent"] input[type="number"],
+html[data-ui-family="fluent"] input[type="password"],
+html[data-ui-family="fluent"] .input,
+html[data-ui-family="fluent"] .textarea,
+html[data-ui-family="fluent"] .select {
+  border-radius: var(--control-radius);
+  background: var(--surface);
+  border-color: var(--border-2);
+}
+
+html[data-ui-family="fluent"] .focus-ring:focus-visible,
+html[data-ui-family="fluent"] .input:focus,
+html[data-ui-family="fluent"] .textarea:focus,
+html[data-ui-family="fluent"] .select:focus,
+html[data-ui-family="fluent"] textarea:focus,
+html[data-ui-family="fluent"] select:focus,
+html[data-ui-family="fluent"] input[type="text"]:focus,
+html[data-ui-family="fluent"] input[type="number"]:focus,
+html[data-ui-family="fluent"] input[type="password"]:focus {
+  border-color: color-mix(in srgb, var(--accent) 72%, white 28%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+html[data-ui-family="fluent"] .canvas-toolbar {
+  min-height: 48px;
+  background: var(--toolbar);
+}
+
+html[data-ui-family="fluent"] .source-strip {
+  min-height: 56px;
+  background: color-mix(in srgb, var(--toolbar) 78%, transparent);
+}
+
+html[data-ui-family="fluent"] .footer-bar {
+  min-height: 36px;
+  background: var(--toolbar);
+}
+
+@media (max-width: 1180px) {
+  html[data-ui-family="fluent"] {
+    --fluent-pane-left: clamp(320px, 31vw, 360px);
+    --fluent-pane-right: clamp(280px, 27vw, 320px);
+  }
+}
+
+@media (max-width: 980px) {
+  html[data-ui-family="fluent"] .studio {
+    grid-template-columns: minmax(320px, 36vw) minmax(0, 1fr);
+  }
+
+  html[data-ui-family="fluent"] .history-rail {
+    display: none;
+  }
+}

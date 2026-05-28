@@ -28,7 +28,7 @@ export function HistoryTile({
   onOpenMenu: (x: number, y: number) => void;
   variant?: "default" | "phone" | "phoneFeature";
 }) {
-  const { isMac, isWindows } = usePlatform();
+  const { isMac, usesFluentUI } = usePlatform();
   const previewURL = useBlobURL(item.previewBlob ?? item.imageBlob ?? null, item.imageB64 ?? null);
 
   function openMenuFromEvent(e: React.MouseEvent) {
@@ -129,7 +129,7 @@ export function HistoryTile({
         onMouseDown={handleMouseDown}
         onDoubleClick={() => onReuse(item)}
         onContextMenu={openMenuFromEvent}
-        className={`group relative overflow-hidden border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[20px]"} ${
+        className={`group relative overflow-hidden border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"} ${
           isCurrent
             ? "border-[color:var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
             : isCompare
@@ -147,7 +147,7 @@ export function HistoryTile({
           />
           <HistoryModeBadge mode={item.mode} className="absolute left-2 top-2" />
           {isCompare ? (
-            <span className={`absolute right-2 top-2 bg-blue-500/90 px-1.5 py-0.5 text-[10px] text-white ${isWindows ? "rounded-[6px]" : "rounded-full"}`}>B</span>
+            <span className={`absolute right-2 top-2 bg-blue-500/90 px-1.5 py-0.5 text-[10px] text-white ${usesFluentUI ? "rounded-[6px]" : "rounded-full"}`}>B</span>
           ) : null}
           <button
             type="button"
@@ -157,7 +157,7 @@ export function HistoryTile({
             }}
             onContextMenu={openMenuFromEvent}
             title="删除"
-            className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/52 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+            className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center bg-black/52 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
           >
             <X className="h-3 w-3" />
           </button>
@@ -174,7 +174,7 @@ export function HistoryTile({
               type="button"
               onClick={openMenuFromEvent}
               onContextMenu={openMenuFromEvent}
-              className={`inline-flex min-h-[28px] items-center gap-1 rounded-full border border-black/[0.06] bg-black/[0.03] px-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:border-[color:var(--accent)]/25 hover:text-[var(--accent)] dark:border-white/[0.06] dark:bg-white/[0.04] ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+              className={`inline-flex min-h-[28px] items-center gap-1 rounded-full border border-black/[0.06] bg-black/[0.03] px-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:border-[color:var(--accent)]/25 hover:text-[var(--accent)] dark:border-white/[0.06] dark:bg-white/[0.04] ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
             >
               <Ellipsis className="h-3.5 w-3.5" />
               更多
@@ -192,7 +192,7 @@ export function HistoryTile({
       onMouseDown={handleMouseDown}
       onDoubleClick={() => onReuse(item)}
       onContextMenu={openMenuFromEvent}
-      className={`group relative aspect-square cursor-pointer overflow-hidden border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[20px]"} ${
+      className={`group relative aspect-square cursor-pointer overflow-hidden border bg-white/70 shadow-[var(--shadow-card)] transition-all dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px]" : "rounded-[20px]"} ${
         isCurrent
           ? "border-[color:var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
           : isCompare
@@ -209,14 +209,14 @@ export function HistoryTile({
       />
       <HistoryModeBadge mode={item.mode} className="absolute left-1.5 top-1.5 bg-black/55" />
       {isCompare ? (
-        <span className={`absolute right-1.5 top-1.5 bg-blue-500 px-1.5 py-0.5 text-[10px] text-white ${isWindows ? "rounded-[6px]" : "rounded-full"}`}>B</span>
+        <span className={`absolute right-1.5 top-1.5 bg-blue-500 px-1.5 py-0.5 text-[10px] text-white ${usesFluentUI ? "rounded-[6px]" : "rounded-full"}`}>B</span>
       ) : null}
       <button
         type="button"
         onClick={openMenuFromEvent}
         onContextMenu={openMenuFromEvent}
         title="更多"
-        className={`absolute bottom-1.5 left-1.5 inline-flex h-6 min-w-[28px] items-center justify-center bg-black/55 px-1.5 text-white backdrop-blur-sm transition-all hover:bg-black/70 ${isWindows ? "rounded-[8px]" : "rounded-full"} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}
+        className={`absolute bottom-1.5 left-1.5 inline-flex h-6 min-w-[28px] items-center justify-center bg-black/55 px-1.5 text-white backdrop-blur-sm transition-all hover:bg-black/70 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}
       >
         <Ellipsis className="h-3.5 w-3.5" />
       </button>
@@ -228,7 +228,7 @@ export function HistoryTile({
         }}
         onContextMenu={openMenuFromEvent}
         title="删除"
-        className={`absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center bg-black/55 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+        className={`absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center bg-black/55 text-white opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
       >
         <X className="h-3 w-3" />
       </button>

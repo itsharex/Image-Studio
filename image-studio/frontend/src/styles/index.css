@@ -243,88 +243,6 @@ textarea {
   min-width: 0;
 }
 
-/* Windows / Fluent design tokens: Segoe typography, subtler rounding,
-   higher border contrast, and layered materials inspired by Mica surfaces. */
-:root[data-ui-family="fluent"] {
-  --accent: #0067c0;
-  --accent-2: #0f7ad6;
-  --accent-soft: rgb(0 103 192 / 0.12);
-  --bg: #f3f3f3;
-  --bg-2: #ededed;
-  --panel: rgb(255 255 255 / 0.88);
-  --panel-2: rgb(250 250 250 / 0.92);
-  --surface: #fbfbfb;
-  --surface-2: #efefef;
-  --sidebar: rgb(248 248 248 / 0.82);
-  --inspector: rgb(244 244 244 / 0.82);
-  --toolbar: rgb(246 246 246 / 0.8);
-  --border: rgb(0 0 0 / 0.09);
-  --border-2: rgb(0 0 0 / 0.18);
-  --text: #1f1f1f;
-  --text-muted: rgb(54 54 54 / 0.78);
-  --text-dim: rgb(96 96 96 / 0.76);
-  --danger: #c42b1c;
-  --danger-soft: rgb(196 43 28 / 0.12);
-  --success: #0f7b0f;
-  --canvas-bg: #ececec;
-  --canvas-tile: #dbdbdb;
-  --on-accent-soft: #005a9e;
-  --btn-secondary-bg: #f6f6f6;
-  --btn-secondary-bg-hover: #ececec;
-  --tool-hover-bg: rgb(0 103 192 / 0.1);
-  --tool-hover-text: #005a9e;
-  --error-text: #8a1010;
-  --error-border: rgb(196 43 28 / 0.22);
-  --shadow-card: 0 14px 34px rgb(0 0 0 / 0.08);
-  --shadow-card-hover: 0 18px 42px rgb(0 0 0 / 0.12);
-  --window-blur: blur(20px);
-  --window-outline: rgb(255 255 255 / 0.7);
-  --header-height: 48px;
-  --tab-radius: 10px;
-  --card-radius: 12px;
-  --control-radius: 8px;
-  --surface-elevated: rgb(255 255 255 / 0.84);
-  --surface-elevated-dark: rgb(32 32 32 / 0.7);
-  --title-font: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  --body-font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  --mono-font: "Cascadia Code", "SFMono-Regular", ui-monospace, Consolas, monospace;
-}
-
-:root.dark[data-ui-family="fluent"] {
-  --accent: #4cc2ff;
-  --accent-2: #78d3ff;
-  --accent-soft: rgb(76 194 255 / 0.18);
-  --bg: #202020;
-  --bg-2: #1b1b1b;
-  --panel: rgb(42 42 42 / 0.9);
-  --panel-2: rgb(38 38 38 / 0.94);
-  --surface: #2b2b2b;
-  --surface-2: #353535;
-  --sidebar: rgb(35 35 35 / 0.86);
-  --inspector: rgb(31 31 31 / 0.84);
-  --toolbar: rgb(37 37 37 / 0.84);
-  --border: rgb(255 255 255 / 0.08);
-  --border-2: rgb(255 255 255 / 0.18);
-  --text: #f5f5f5;
-  --text-muted: rgb(243 243 243 / 0.76);
-  --text-dim: rgb(215 215 215 / 0.6);
-  --danger: #ff99a4;
-  --danger-soft: rgb(255 153 164 / 0.12);
-  --success: #6ccb5f;
-  --canvas-bg: #252526;
-  --canvas-tile: #343436;
-  --on-accent-soft: #9ddfff;
-  --btn-secondary-bg: #2f2f2f;
-  --btn-secondary-bg-hover: #383838;
-  --tool-hover-bg: rgb(76 194 255 / 0.14);
-  --tool-hover-text: #b7e8ff;
-  --error-text: #ffb4bd;
-  --error-border: rgb(255 153 164 / 0.28);
-  --shadow-card: 0 20px 48px rgb(0 0 0 / 0.34);
-  --shadow-card-hover: 0 24px 56px rgb(0 0 0 / 0.4);
-  --window-outline: rgb(255 255 255 / 0.08);
-}
-
 /* Android / Material 3 targets. Phone and Pad share the same visual language,
    while layout rules below split compact bottom navigation from expanded rail. */
 :root[data-ui-family="android"] {
@@ -467,11 +385,6 @@ html.dark[data-ui-family="android"] body {
     linear-gradient(135deg, #101412 0%, #141916 54%, #101512 100%);
 }
 button, input, textarea, select { font-family: inherit; }
-
-body[data-platform="windows"],
-html[data-platform="windows"] body {
-  text-rendering: optimizeLegibility;
-}
 
 /* 全局滚动条 —— 模仿 fuckwangui 的圆角 thumb */
 *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -951,6 +864,7 @@ html[data-ui-family="apple"] .select:focus {
    每改完一个组件,删一段对应 CSS。 */
 @import "./_buttons.css";
 @import "./_form.css";
+@import "./_fluent-desktop.css";
 @import "./_layout.css";
 @import "./_android-phone-advanced.css";
 @import "./_android-settings.css";

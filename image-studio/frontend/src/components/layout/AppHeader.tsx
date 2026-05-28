@@ -10,7 +10,7 @@ const REPO_URL = "https://github.com/RoseKhlifa/Image-Studio";
 
 export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { fullscreen, theme, setTheme, pushToast, workspaces, newWorkspace, openStarPrompt } = useStudioStore();
-  const { isAndroid, isAndroidPhone, isAndroidPad, isMac, isWindows, usesAndroidUI, usesAppleUI } = usePlatform();
+  const { isAndroid, isAndroidPhone, isAndroidPad, isMac, usesFluentUI, usesAndroidUI, usesAppleUI } = usePlatform();
   if (fullscreen) return null;
 
   return (
@@ -23,7 +23,7 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
           :
         usesAppleUI
           ? `${isMac ? "mac-app-header" : ""} min-h-[64px] px-5 pb-2 pt-3`
-          : isWindows
+          : usesFluentUI
             ? "min-h-[48px] px-3"
             : "min-h-12 px-4"
       }`}
@@ -32,7 +32,7 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
         <AppHeaderBrand />
       </div>
 
-      <div className={`no-drag ml-auto flex items-center shrink-0 ${usesAndroidUI ? "android-header-actions" : ""} ${isMac ? "mac-header-actions" : ""} ${isWindows ? "gap-1" : isMac ? "gap-2" : "gap-1.5"}`}>
+      <div className={`no-drag ml-auto flex items-center shrink-0 ${usesAndroidUI ? "android-header-actions" : ""} ${isMac ? "mac-header-actions" : ""} ${usesFluentUI ? "gap-1" : isMac ? "gap-2" : "gap-1.5"}`}>
         {!isAndroid && <HeaderIconBtn
           onClick={() => newWorkspace()}
           title={workspaces.length > 1 ? `${workspaces.length} 个标签 · 新建` : "新建标签"}
@@ -45,7 +45,7 @@ export function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
           )}
         </HeaderIconBtn>}
         {!isAndroid && <div className={`platform-seg flex items-center p-0.5 ring-1 ${
-          isWindows
+          usesFluentUI
             ? "bg-white/66 ring-black/[0.08] dark:bg-white/[0.04] dark:ring-white/[0.08]"
             : "rounded-full bg-black/[0.04] ring-black/[0.05] dark:bg-white/[0.06] dark:ring-white/[0.06]"
         }`}>

@@ -14,7 +14,7 @@ export function ResultDetailDrawer() {
   const close = useStudioStore((s) => s.closeResultDetail);
   const setField = useStudioStore((s) => s.setField);
   const pushToast = useStudioStore((s) => s.pushToast);
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
 
   if (!item) return null;
   const detail = item;
@@ -50,13 +50,13 @@ export function ResultDetailDrawer() {
   return (
     <Modal open onClose={close} title="生成详情" width={720}>
       <div className="grid gap-4 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
-        <section className={`platform-card border border-black/[0.05] bg-white/72 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
-          <div className={`flex items-center justify-center border border-black/[0.08] bg-[var(--surface)] p-2 dark:border-white/[0.06] ${isWindows ? "rounded-[10px]" : "rounded-[16px]"}`}>
+        <section className={`platform-card border border-black/[0.05] bg-white/72 p-3 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px]" : "rounded-[18px]"}`}>
+          <div className={`flex items-center justify-center border border-black/[0.08] bg-[var(--surface)] p-2 dark:border-white/[0.06] ${usesFluentUI ? "rounded-[10px]" : "rounded-[16px]"}`}>
             <img
               src={previewURL ?? `data:image/png;base64,${detail.imageB64}`}
               alt="生成结果"
               decoding="async"
-              className={`max-h-[300px] max-w-full object-contain ${isWindows ? "rounded-[8px]" : "rounded-[12px]"}`}
+              className={`max-h-[300px] max-w-full object-contain ${usesFluentUI ? "rounded-[8px]" : "rounded-[12px]"}`}
             />
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -113,7 +113,7 @@ export function ResultDetailDrawer() {
 
           <Section title="文件">
             {detail.savedPath ? (
-              <p className={`font-mono-token break-all border border-black/[0.06] bg-[var(--surface)] px-2.5 py-2 text-[11px] text-zinc-600 dark:border-white/[0.04] dark:text-zinc-400 ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+              <p className={`font-mono-token break-all border border-black/[0.06] bg-[var(--surface)] px-2.5 py-2 text-[11px] text-zinc-600 dark:border-white/[0.04] dark:text-zinc-400 ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
                 {detail.savedPath}
               </p>
             ) : (
@@ -136,9 +136,9 @@ function Section({ title, hint, children }: {
   hint?: string;
   children: React.ReactNode;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
-    <section className={`platform-card border border-black/[0.05] bg-white/72 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${isWindows ? "rounded-[12px]" : "rounded-[18px]"}`}>
+    <section className={`platform-card border border-black/[0.05] bg-white/72 p-4 shadow-[var(--shadow-card)] dark:border-white/[0.06] dark:bg-white/[0.03] ${usesFluentUI ? "rounded-[12px]" : "rounded-[18px]"}`}>
       <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{title}</h3>
       {hint && <p className="mb-2 text-[10px] leading-relaxed text-zinc-500">{hint}</p>}
       {children}
@@ -160,7 +160,7 @@ function PromptBlock({ children, muted, highlight }: {
   muted?: boolean;
   highlight?: boolean;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
     <p className={`mb-2 whitespace-pre-wrap break-words px-3 py-2 text-xs leading-relaxed ${
       highlight
@@ -168,7 +168,7 @@ function PromptBlock({ children, muted, highlight }: {
         : muted
           ? "border border-black/[0.06] bg-[var(--surface)] text-zinc-500 dark:border-white/[0.04]"
           : "border border-black/[0.06] bg-[var(--surface)] text-zinc-700 dark:border-white/[0.04] dark:text-zinc-300"
-    } ${isWindows ? "rounded-[10px]" : "rounded-[14px]"}`}>
+    } ${usesFluentUI ? "rounded-[10px]" : "rounded-[14px]"}`}>
       {children}
     </p>
   );
@@ -179,7 +179,7 @@ function Btn({ children, onClick, primary }: {
   onClick: () => void;
   primary?: boolean;
 }) {
-  const { isWindows } = usePlatform();
+  const { usesFluentUI } = usePlatform();
   return (
     <button
       type="button"
@@ -188,7 +188,7 @@ function Btn({ children, onClick, primary }: {
         primary
           ? "border border-[color:var(--accent)]/20 bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-90"
           : "border border-black/[0.08] text-zinc-700 hover:border-[color:var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/[0.06] dark:text-zinc-300"
-      } ${isWindows ? "rounded-[8px]" : "rounded-full"}`}
+      } ${usesFluentUI ? "rounded-[8px]" : "rounded-full"}`}
     >
       {children}
     </button>

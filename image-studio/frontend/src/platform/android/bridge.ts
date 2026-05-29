@@ -4,6 +4,7 @@ import { invokeAndroidNative } from "./nativeInvoke";
 export type AndroidBridge = {
   invoke?: (requestId: string, method: string, payloadJson: string) => void;
   saveImage?: (imageB64: string, suggestedName: string) => string | Promise<string>;
+  saveImagePathAs?: (path: string, suggestedName: string) => string | Promise<string>;
   shareImage?: (imageB64: string, suggestedName: string) => string | Promise<string>;
   openOutputDir?: () => string | Promise<string | void>;
   pickImage?: () => string | Promise<string | AndroidPickedImage | null>;

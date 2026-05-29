@@ -396,6 +396,9 @@ export function SaveImageAs(imageB64: string, suggestedName: string): Promise<st
   if (hasServiceMethod("SaveImageAs")) {
     return invokeService<string>(unsupportedMessage, "SaveImageAs", imageB64, suggestedName);
   }
+  if (canInvokeAndroidMethod("SaveImageAs")) {
+    return invokeAndroid<string>(unsupportedMessage, "SaveImageAs", imageB64, suggestedName);
+  }
   const mimeType = suggestedName.toLowerCase().endsWith(".jpg") || suggestedName.toLowerCase().endsWith(".jpeg")
     ? "image/jpeg"
     : suggestedName.toLowerCase().endsWith(".webp")
@@ -407,6 +410,13 @@ export function SaveImageAs(imageB64: string, suggestedName: string): Promise<st
 export function SaveImagePathAs(path: string, suggestedName: string): Promise<string> {
   if (hasServiceMethod("SaveImagePathAs")) {
     return invokeService<string>(unsupportedMessage, "SaveImagePathAs", path, suggestedName);
+  }
+  if (isVirtualPath(path)) {
+    return ReadImageAsBase64(path).then((b64) => SaveImageAs(b64, suggestedName));
+  }
+  if (canInvokeAndroidMethod("SaveImagePathAs")) {
+    return invokeAndroid<string>(unsupportedMessage, "SaveImagePathAs", path, suggestedName)
+      .catch(() => ReadImageAsBase64(path).then((b64) => SaveImageAs(b64, suggestedName)));
   }
   return ReadImageAsBase64(path).then((b64) => SaveImageAs(b64, suggestedName));
 }

@@ -401,6 +401,35 @@ test("runtimeHost Android transforms persist GPU-backed results to host files", 
   });
 });
 
+test("runtimeHost Android SaveImagePathAs uses native path save", async () => {
+  const calls = [];
+  await withPatchedGlobals(async () => {
+    globalThis.window.AndroidImageStudio = {
+      invoke(requestId, method, payloadJson) {
+        const args = JSON.parse(payloadJson);
+        calls.push({ method, args });
+        queueMicrotask(() => {
+          if (method === "SaveImagePathAs") {
+            window.__imageStudioNativeResolve?.(requestId, "content://media/external/images/media/42");
+            return;
+          }
+          window.__imageStudioNativeReject?.(requestId, `unexpected ${method}`);
+        });
+      },
+    };
+  }, async () => {
+    const runtimeHost = await loadRuntimeHost();
+    const saved = await runtimeHost.SaveImagePathAs("/data/user/0/app/files/full.png", "result.png");
+    assert.equal(saved, "content://media/external/images/media/42");
+    assert.deepEqual(calls, [
+      {
+        method: "SaveImagePathAs",
+        args: ["/data/user/0/app/files/full.png", "result.png"],
+      },
+    ]);
+  });
+});
+
 test("virtualHostStore prunes old in-memory images", async () => {
   await withPatchedGlobals(async () => {}, async () => {
     const virtualHostStore = await loadVirtualHostStore();
@@ -552,7 +581,7 @@ test("runtimeHost probes upstream through Wails backend", async () => {
     const runtimeHost = await loadRuntimeHost();
     await runtimeHost.probeCurrentUpstream("https://relay.example.com", "sk-test");
     assert.deepEqual(globalThis.__probeCalls, [
-      { baseURL: "https://relay.example.com", apiKey: "sk-test" },
+      { baseURL: "https://relay.example.com", apiKey: "sk-test", proxyMode: "system", proxyURL: "" },
     ]);
   });
 });
@@ -582,7 +611,7 @@ test("runtimeHost probes upstream through Android backend", async () => {
     assert.deepEqual(globalThis.__probeCalls, [
       {
         method: "ProbeUpstream",
-        args: [{ baseURL: "https://relay.example.com", apiKey: "sk-android" }],
+        args: [{ baseURL: "https://relay.example.com", apiKey: "sk-android", proxyMode: "system", proxyURL: "" }],
       },
     ]);
   });

@@ -26,6 +26,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.net.URI
@@ -114,6 +115,7 @@ class AndroidImageStudioBridge(
                 }
                 "ExportHistoryToFile" -> exportHistory(args.optString(0))
                 "SaveImageAs" -> saveImage(args.optString(0), args.optString(1))
+                "SaveImagePathAs" -> saveImagePathAs(args.optString(0), args.optString(1))
                 "HttpRequestText" -> {
                     val payload = args.optJSONObject(0) ?: throw IllegalArgumentException("缺少 HTTP 请求参数")
                     runHttpRequestText(requestId, payload)
@@ -265,13 +267,32 @@ class AndroidImageStudioBridge(
 
     @JavascriptInterface
     fun saveImage(imageB64: String, suggestedName: String): String {
-        val name = if (suggestedName.endsWith(".png", true)) suggestedName else "$suggestedName.png"
+        if (imageB64.isBlank()) throw IllegalArgumentException("图片数据为空")
+        val name = ensureImageFileName(suggestedName, "image-${timestamp()}.png")
         val bytes = Base64.decode(imageB64, Base64.DEFAULT)
+        return saveImageStream(name, imageMimeForName(name)) { output ->
+            output.write(bytes)
+        }
+    }
 
+    @JavascriptInterface
+    fun saveImagePathAs(path: String, suggestedName: String): String {
+        val trimmed = path.trim()
+        if (trimmed.isBlank()) throw IllegalArgumentException("图片路径为空")
+        val fallback = trimmed.substringAfterLast('/').substringAfterLast('\\').ifBlank { "image-${timestamp()}.png" }
+        val name = ensureImageFileName(suggestedName.ifBlank { fallback }, fallback)
+        return saveImageStream(name, imageMimeForName(name)) { output ->
+            openInputStreamForPath(trimmed).use { input ->
+                input.copyTo(output)
+            }
+        }
+    }
+
+    private fun saveImageStream(name: String, mimeType: String, write: (OutputStream) -> Unit): String {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "ImageStudio")
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
@@ -279,8 +300,13 @@ class AndroidImageStudioBridge(
             val resolver = context.contentResolver
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             if (uri != null) {
-                resolver.openOutputStream(uri)?.use { output ->
-                    output.write(bytes)
+                try {
+                    resolver.openOutputStream(uri)?.use { output ->
+                        write(output)
+                    } ?: throw IllegalStateException("无法写入相册文件")
+                } catch (error: Exception) {
+                    resolver.delete(uri, null, null)
+                    throw error
                 }
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -291,7 +317,9 @@ class AndroidImageStudioBridge(
 
         val file = File(getOutputDir(), name)
         file.parentFile?.mkdirs()
-        file.writeBytes(bytes)
+        FileOutputStream(file).use { output ->
+            write(output)
+        }
         return file.absolutePath
     }
 
@@ -583,6 +611,24 @@ class AndroidImageStudioBridge(
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return fallback
         return trimmed.replace(Regex("[^A-Za-z0-9._\\-\\u4E00-\\u9FFF]+"), "-")
+    }
+
+    private fun ensureImageFileName(name: String, fallback: String): String {
+        val safe = sanitizeFileName(name, fallback)
+        return if (Regex("\\.(png|jpe?g|webp)$", RegexOption.IGNORE_CASE).containsMatchIn(safe)) {
+            safe
+        } else {
+            "$safe.png"
+        }
+    }
+
+    private fun imageMimeForName(name: String): String {
+        val lower = name.lowercase(Locale.US)
+        return when {
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") -> "image/jpeg"
+            lower.endsWith(".webp") -> "image/webp"
+            else -> "image/png"
+        }
     }
 
     private fun queryDisplayName(uri: Uri): String? {

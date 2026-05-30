@@ -49,7 +49,7 @@ export function MacComposeStyleAndSize({
             <button onClick={() => setField("styleTag", "")} className="text-[12px] text-[var(--accent)] hover:opacity-80">清除</button>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="mac-style-chips">
           {STYLE_CHIPS.map((style) => {
             const active = styleTag === style.id;
             return (
@@ -58,29 +58,9 @@ export function MacComposeStyleAndSize({
                 type="button"
                 aria-pressed={active}
                 onClick={() => setField("styleTag", active ? "" : style.id)}
-                className={`platform-chip group relative flex min-h-[58px] min-w-0 items-start gap-2 overflow-hidden rounded-[18px] px-3 py-3 text-left ring-1 transition-colors ${
-                  active
-                    ? "active bg-[var(--accent-soft)] text-[var(--accent)] ring-[color:var(--accent)]/45 shadow-[0_10px_24px_rgb(0_122_255_/_0.14)]"
-                    : "text-zinc-600 ring-black/[0.08] hover:text-zinc-900 hover:ring-[color:var(--accent)]/30 dark:text-zinc-300 dark:ring-white/[0.08] dark:hover:text-zinc-100"
-                }`}
+                className={`mac-style-pill ${active ? "active" : ""}`}
               >
-                <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                  active
-                    ? "border-[color:var(--accent)] bg-[var(--accent)] text-white"
-                    : "border-zinc-300 text-transparent dark:border-zinc-600"
-                }`}>
-                  <Check className="h-3 w-3" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block min-w-0 whitespace-normal break-words text-[13px] font-semibold leading-[1.25] [overflow-wrap:anywhere]">
-                    {style.label}
-                  </span>
-                  <span className={`mt-1 block min-w-0 whitespace-normal break-words text-[11px] leading-[1.3] [overflow-wrap:anywhere] ${
-                    active ? "text-[var(--accent)]/80" : "text-zinc-500 dark:text-zinc-400"
-                  }`}>
-                    {style.hint}
-                  </span>
-                </span>
+                <span>{style.label}</span>
               </button>
             );
           })}

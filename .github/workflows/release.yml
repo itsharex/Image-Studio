@@ -71,38 +71,33 @@ jobs:
           - id: windows-amd64
             runner: windows-latest
             goos: windows
-            artifact_name: image-studio-windows-amd64.exe
-            artifact_path: dist/image-studio-windows-amd64.exe
+            artifact_suffix: windows-amd64.exe
             wails_args: -platform windows/amd64 -clean
-            package_cmd: cp image-studio/build/bin/image-studio.exe dist/image-studio-windows-amd64.exe
+            package_cmd: cp image-studio/build/bin/image-studio.exe "$artifact_path"
           - id: windows-arm64
             runner: windows-11-arm
             goos: windows
-            artifact_name: image-studio-windows-arm64.exe
-            artifact_path: dist/image-studio-windows-arm64.exe
+            artifact_suffix: windows-arm64.exe
             wails_args: -platform windows/arm64 -clean
-            package_cmd: cp image-studio/build/bin/image-studio.exe dist/image-studio-windows-arm64.exe
+            package_cmd: cp image-studio/build/bin/image-studio.exe "$artifact_path"
           - id: macos-universal
             runner: macos-latest
             goos: darwin
-            artifact_name: image-studio-macos-universal.zip
-            artifact_path: dist/image-studio-macos-universal.zip
+            artifact_suffix: macos-universal.zip
             wails_args: ""
-            package_cmd: ditto -c -k --sequesterRsrc --keepParent "image-studio/build/bin/Image Studio.app" dist/image-studio-macos-universal.zip
+            package_cmd: ditto -c -k --sequesterRsrc --keepParent "image-studio/build/bin/Image Studio.app" "$artifact_path"
           - id: linux-amd64
             runner: ubuntu-24.04
             goos: linux
-            artifact_name: image-studio-linux-amd64.tar.gz
-            artifact_path: dist/image-studio-linux-amd64.tar.gz
+            artifact_suffix: linux-amd64.tar.gz
             wails_args: -platform linux/amd64 -clean -tags webkit2_41
-            package_cmd: tar -C image-studio/build/bin -czf dist/image-studio-linux-amd64.tar.gz image-studio
+            package_cmd: tar -C image-studio/build/bin -czf "$artifact_path" image-studio
           - id: linux-arm64
             runner: ubuntu-24.04-arm
             goos: linux
-            artifact_name: image-studio-linux-arm64.tar.gz
-            artifact_path: dist/image-studio-linux-arm64.tar.gz
+            artifact_suffix: linux-arm64.tar.gz
             wails_args: -platform linux/arm64 -clean -tags webkit2_41
-            package_cmd: tar -C image-studio/build/bin -czf dist/image-studio-linux-arm64.tar.gz image-studio
+            package_cmd: tar -C image-studio/build/bin -czf "$artifact_path" image-studio
 
     steps:
       - name: Checkout
@@ -161,17 +156,24 @@ jobs:
           fi
 
       - name: Stage packaged artifact
+        id: package
         shell: bash
         run: |
           mkdir -p dist
+          artifact_name="image-studio-${{ needs.prepare-version.outputs.app_version }}-${{ matrix.artifact_suffix }}"
+          artifact_path="dist/${artifact_name}"
           ${{ matrix.package_cmd }}
           ls -la dist/
+          {
+            echo "artifact_name=${artifact_name}"
+            echo "artifact_path=${artifact_path}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_path }}
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ steps.package.outputs.artifact_path }}
           retention-days: 14
 
   build-android-apk:
@@ -239,11 +241,25 @@ jobs:
         run: |
           "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner" verify -v "android-shell/app/build/outputs/apk/release/app-release.apk"
 
+      - name: Stage apk artifact
+        id: package
+        shell: bash
+        run: |
+          mkdir -p dist
+          artifact_name="image-studio-${{ needs.prepare-version.outputs.app_version }}-android-release.apk"
+          artifact_path="dist/${artifact_name}"
+          cp android-shell/app/build/outputs/apk/release/app-release.apk "$artifact_path"
+          ls -la dist/
+          {
+            echo "artifact_name=${artifact_name}"
+            echo "artifact_path=${artifact_path}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Upload apk artifact
         uses: actions/upload-artifact@v4
         with:
-          name: image-studio-android-release.apk
-          path: android-shell/app/build/outputs/apk/release/app-release.apk
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ steps.package.outputs.artifact_path }}
           retention-days: 14
 
   publish-release:
